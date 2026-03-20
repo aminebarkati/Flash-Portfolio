@@ -1905,6 +1905,8 @@
         <button class="ep-btn primary" onclick="openContactModal()">
           + Add Contact
         </button>
+
+        <div id="cloned-sections-wrap"></div>
       </div>
 
       <!-- TAB: EXPORT -->
@@ -2284,15 +2286,74 @@
       ];
 
       const sectionsOrder = [
-        { id: "hero", label: "Home / Hero", visible: true },
-        { id: "skills", label: "Skills", visible: true },
-        { id: "experience", label: "Experience", visible: true },
-        { id: "education", label: "Education", visible: true },
-        { id: "projects", label: "Projects", visible: true },
-        { id: "life", label: "Life Events", visible: true },
-        { id: "languages", label: "Languages", visible: true },
-        { id: "contact", label: "Contact", visible: true },
+        {
+          id: "hero",
+          type: "hero",
+          label: "Home",
+          labelEn: "Home",
+          labelFr: "Accueil",
+          visible: true,
+        },
+        {
+          id: "skills",
+          type: "skills",
+          label: "Skills & Technologies",
+          labelEn: "Skills & Technologies",
+          labelFr: "Compétences & Technologies",
+          visible: true,
+        },
+        {
+          id: "experience",
+          type: "experience",
+          label: "Experience",
+          labelEn: "Experience",
+          labelFr: "Expérience",
+          visible: true,
+        },
+        {
+          id: "education",
+          type: "education",
+          label: "Education",
+          labelEn: "Education",
+          labelFr: "Formation",
+          visible: true,
+        },
+        {
+          id: "projects",
+          type: "projects",
+          label: "Projects",
+          labelEn: "Projects",
+          labelFr: "Projets",
+          visible: true,
+        },
+        {
+          id: "life",
+          type: "life",
+          label: "Life Events",
+          labelEn: "Life Events",
+          labelFr: "Moments Clés",
+          visible: true,
+        },
+        {
+          id: "languages",
+          type: "languages",
+          label: "Languages",
+          labelEn: "Languages",
+          labelFr: "Langues",
+          visible: true,
+        },
+        {
+          id: "contact",
+          type: "contact",
+          label: "Get in Touch",
+          labelEn: "Get in Touch",
+          labelFr: "Me Contacter",
+          visible: true,
+        },
       ];
+      // Registry: stores independent data for each cloned section
+      // sectionRegistry[id] = { type, data }
+      const sectionRegistry = {};
 
       const themes = [
         {
@@ -2399,7 +2460,10 @@
         renderEvents();
         renderLanguages();
         renderContact();
+        // Re-render all cloned sections with new language
+        Object.keys(sectionRegistry).forEach(renderSection);
         renderContentList();
+        rebuildNav();
       }
 
       function t(obj) {
@@ -2409,10 +2473,13 @@
       /* ═══════════════════════════════════════════
    RENDER SKILLS
 ═══════════════════════════════════════════ */
-      function renderSkills() {
-        const g = document.getElementById("skills-grid");
+      function renderSkills(containerId, data) {
+        containerId = containerId || "skills-grid";
+        data = data || skillsData;
+        const g = document.getElementById(containerId);
+        if (!g) return;
         g.innerHTML = "";
-        skillsData.forEach((s, i) => {
+        data.forEach((s, i) => {
           const card = document.createElement("div");
           card.className = "skill-card";
           card.innerHTML = `
@@ -2425,8 +2492,8 @@
       /* ═══════════════════════════════════════════
    RENDER TIMELINE (experience / education)
 ═══════════════════════════════════════════ */
-      function renderTimeline(type, data) {
-        const el = document.getElementById(type + "-timeline");
+      function renderTimeline(type, data, containerId) {
+        const el = document.getElementById(containerId || type + "-timeline");
         if (!el) return;
         el.innerHTML = "";
         data.forEach((item, i) => {
@@ -2448,10 +2515,13 @@
       /* ═══════════════════════════════════════════
    RENDER PROJECTS
 ═══════════════════════════════════════════ */
-      function renderProjects() {
-        const g = document.getElementById("projects-grid");
+      function renderProjects(containerId, data) {
+        containerId = containerId || "projects-grid";
+        data = data || projectsData;
+        const g = document.getElementById(containerId);
+        if (!g) return;
         g.innerHTML = "";
-        projectsData.forEach((p, i) => {
+        data.forEach((p, i) => {
           const el = document.createElement("div");
           el.className = "project-card";
           const linkHtml = p.link
@@ -2470,10 +2540,13 @@
       /* ═══════════════════════════════════════════
    RENDER EVENTS
 ═══════════════════════════════════════════ */
-      function renderEvents() {
-        const g = document.getElementById("events-grid");
+      function renderEvents(containerId, data) {
+        containerId = containerId || "events-grid";
+        data = data || eventsData;
+        const g = document.getElementById(containerId);
+        if (!g) return;
         g.innerHTML = "";
-        eventsData.forEach((ev, i) => {
+        data.forEach((ev, i) => {
           const card = document.createElement("div");
           card.className = "event-card";
           const imgHtml = ev.img
@@ -2504,11 +2577,13 @@
       /* ═══════════════════════════════════════════
    RENDER LANGUAGES
 ═══════════════════════════════════════════ */
-      function renderLanguages() {
-        const g = document.getElementById("lang-grid");
+      function renderLanguages(containerId, data) {
+        containerId = containerId || "lang-grid";
+        data = data || languagesData;
+        const g = document.getElementById(containerId);
         if (!g) return;
         g.innerHTML = "";
-        languagesData.forEach((l) => {
+        data.forEach((l) => {
           const card = document.createElement("div");
           card.className = "lang-card";
           card.innerHTML = `
@@ -2522,11 +2597,13 @@
       /* ═══════════════════════════════════════════
    RENDER CONTACT
 ═══════════════════════════════════════════ */
-      function renderContact() {
-        const g = document.getElementById("contact-grid");
+      function renderContact(containerId, data) {
+        containerId = containerId || "contact-grid";
+        data = data || contactData;
+        const g = document.getElementById(containerId);
         if (!g) return;
         g.innerHTML = "";
-        contactData.forEach((c) => {
+        data.forEach((c) => {
           const a = document.createElement("a");
           a.className = "contact-card";
           a.href = c.href;
@@ -2608,8 +2685,10 @@
         const btn = document.getElementById("edit-toggle");
         btn.textContent = editorOpen ? "✕" : "✏️";
         btn.classList.toggle("active", editorOpen);
+        // Sync click-to-edit with panel state
+        if (editorOpen && !editModeOn) toggleEditMode();
+        if (!editorOpen && editModeOn) toggleEditMode();
       }
-
       function switchTab(name) {
         ["theme", "sections", "content", "export"].forEach((t) => {
           document.getElementById("tab-" + t).style.display =
@@ -2779,7 +2858,13 @@
           a.href = "#" + sec.id;
           a.className = "nav-link";
           a.onclick = closeNav;
-          a.innerHTML = `<span class="dot"></span><span>${sec.label}</span>`;
+          const navLabel =
+            currentLang === "fr" && sec.labelFr
+              ? sec.labelFr
+              : sec.labelEn
+                ? sec.labelEn
+                : sec.label;
+          a.innerHTML = `<span class="dot"></span><span>${navLabel}</span>`;
           container.appendChild(a);
         });
         // Re-attach scroll spy to new links
@@ -2864,7 +2949,12 @@
       function renameSectionLabel(id, newLabel) {
         if (!newLabel) return;
         const sec = sectionsOrder.find((s) => s.id === id);
-        if (sec) sec.label = newLabel;
+        if (sec) {
+          sec.label = newLabel;
+          // When renamed, use the new label for both languages
+          sec.labelEn = newLabel;
+          sec.labelFr = newLabel;
+        }
         rebuildNav();
         showToast("✏️ Section renamed");
       }
@@ -2878,28 +2968,154 @@
       function cloneSection(id) {
         const original = document.getElementById(id);
         if (!original) return;
-        // Generate unique id
-        const newId = id + "-clone-" + Date.now();
-        const clone = original.cloneNode(true);
-        clone.id = newId;
-        // Remove scroll observer classes so reveal animation works fresh
-        clone.classList.remove("visible");
-        // Insert right after original in DOM
-        original.after(clone);
-        // Re-attach reveal observer
-        revealObserver.observe(clone);
-        scrollObserver.observe(clone);
-        // Find position of original in sectionsOrder and insert after it
+        const ts = Date.now();
+        const newId = id + "-clone-" + ts;
         const idx = sectionsOrder.findIndex((s) => s.id === id);
         const origEntry = sectionsOrder[idx];
+        const srcType = origEntry.type || id.replace(/-clone-\d+$/, "");
+
+        // Deep-copy source data
+        let srcData;
+        switch (srcType) {
+          case "skills":
+            srcData = JSON.parse(JSON.stringify(skillsData));
+            break;
+          case "experience":
+            srcData = JSON.parse(JSON.stringify(experienceData));
+            break;
+          case "education":
+            srcData = JSON.parse(JSON.stringify(educationData));
+            break;
+          case "projects":
+            srcData = JSON.parse(JSON.stringify(projectsData));
+            break;
+          case "life":
+            srcData = JSON.parse(JSON.stringify(eventsData));
+            break;
+          case "languages":
+            srcData = JSON.parse(JSON.stringify(languagesData));
+            break;
+          case "contact":
+            srcData = JSON.parse(JSON.stringify(contactData));
+            break;
+          default:
+            srcData = [];
+        }
+        // If original is itself a clone, copy from registry
+        if (sectionRegistry[id])
+          srcData = JSON.parse(JSON.stringify(sectionRegistry[id].data));
+        sectionRegistry[newId] = { type: srcType, data: srcData };
+
+        // Container IDs map per type
+        const containerMap = {
+          skills: { old: "skills-grid", new: newId + "-skills-grid" },
+          experience: {
+            old: "experience-timeline",
+            new: newId + "-experience-timeline",
+          },
+          education: {
+            old: "education-timeline",
+            new: newId + "-education-timeline",
+          },
+          projects: { old: "projects-grid", new: newId + "-projects-grid" },
+          life: { old: "events-grid", new: newId + "-events-grid" },
+          languages: { old: "lang-grid", new: newId + "-lang-grid" },
+          contact: { old: "contact-grid", new: newId + "-contact-grid" },
+        };
+
+        // Clone DOM and update IDs
+        const clone = original.cloneNode(true);
+        clone.id = newId;
+        clone.classList.remove("visible");
+        const mapping = containerMap[srcType];
+        if (mapping) {
+          const inner = clone.querySelector("#" + mapping.old);
+          if (inner) inner.id = mapping.new;
+        }
+        original.after(clone);
+        revealObserver.observe(clone);
+        scrollObserver.observe(clone);
+
+        // Register in sectionsOrder
+        const copyLabel = origEntry.label + " (copy)";
         sectionsOrder.splice(idx + 1, 0, {
           id: newId,
-          label: origEntry.label + " (copy)",
+          type: srcType,
+          label: copyLabel,
+          labelEn: (origEntry.labelEn || origEntry.label) + " (copy)",
+          labelFr: (origEntry.labelFr || origEntry.label) + " (copie)",
           visible: origEntry.visible,
         });
+
+        // Render the clone with its own data
+        renderSection(newId);
         buildSectionList();
         rebuildNav();
-        showToast("⧉ Section cloned");
+        renderContentList();
+        showToast("⧉ Section cloned — edit it in the Content tab");
+      }
+
+      // Render a section by id (dispatches to right render fn using registry or original data)
+      function renderSection(id) {
+        const entry = sectionRegistry[id];
+        if (!entry) return;
+        const { type, data } = entry;
+        switch (type) {
+          case "skills":
+            renderSkills(id + "-skills-grid", data);
+            break;
+          case "experience":
+            renderTimeline("", data, id + "-experience-timeline");
+            break;
+          case "education":
+            renderTimeline("", data, id + "-education-timeline");
+            break;
+          case "projects":
+            renderProjects(id + "-projects-grid", data);
+            break;
+          case "life":
+            renderEventsInContainer(id + "-events-grid", data, id);
+            break;
+          case "languages":
+            renderLanguages(id + "-lang-grid", data);
+            break;
+          case "contact":
+            renderContact(id + "-contact-grid", data);
+            break;
+        }
+      }
+
+      // renderEventsInContainer: like renderEvents but aware of the registry id for img upload
+      function renderEventsInContainer(containerId, data, registryId) {
+        const g = document.getElementById(containerId);
+        if (!g) return;
+        g.innerHTML = "";
+        data.forEach((ev, i) => {
+          const card = document.createElement("div");
+          card.className = "event-card";
+          const imgHtml = ev.img
+            ? `<img src="${ev.img}" alt="${t(ev.title)}" style="width:100%;height:180px;object-fit:cover;display:block;cursor:pointer" onclick="openLightbox('${ev.img}')"/>`
+            : `<div class="event-img-placeholder">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>${ev.icon}</span>
+          <span class="upload-hint">${currentLang === "en" ? "+ Upload photo" : "+ Ajouter photo"}</span>
+          <input type="file" accept="image/*" onchange="handleImgRegistry(event,'${registryId}',${i})"/>
+        </div>`;
+          card.innerHTML = `${imgHtml}<div class="event-body"><div class="event-date">${t(ev.date)}</div><div class="event-title">${t(ev.title)}</div><div class="event-desc">${t(ev.desc)}</div></div>`;
+          g.appendChild(card);
+        });
+      }
+
+      function handleImgRegistry(e, registryId, idx) {
+        const f = e.target.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          sectionRegistry[registryId].data[idx].img = ev.target.result;
+          renderSection(registryId);
+          showToast("📸 Photo added!");
+        };
+        reader.readAsDataURL(f);
       }
       function deleteSection(id) {
         const coreIds = [
@@ -2922,8 +3138,10 @@
         if (el) el.remove();
         const idx = sectionsOrder.findIndex((s) => s.id === id);
         if (idx >= 0) sectionsOrder.splice(idx, 1);
+        delete sectionRegistry[id];
         buildSectionList();
         rebuildNav();
+        renderContentList();
         showToast("🗑 Section deleted");
       }
 
@@ -3008,6 +3226,103 @@
       <button class="item-btn danger" onclick="deleteContact(${i})">✕</button></div>`;
           cl.appendChild(row);
         });
+
+        // Cloned sections — render CRUD per clone
+        const clonesWrap = document.getElementById("cloned-sections-wrap");
+        if (clonesWrap) {
+          clonesWrap.innerHTML = "";
+          const cloneIds = Object.keys(sectionRegistry);
+          if (cloneIds.length === 0) {
+            clonesWrap.innerHTML =
+              '<p style="font-size:.72rem;color:var(--muted2);font-family:DM Mono,monospace;line-height:1.6">No cloned sections yet.<br>Use ⧇ in the Sections tab to clone any section.</p>';
+          }
+          cloneIds.forEach((cloneId) => {
+            const entry = sectionRegistry[cloneId];
+            const secEntry = sectionsOrder.find((s) => s.id === cloneId);
+            const label = secEntry ? secEntry.label : cloneId;
+            const typeLabel =
+              {
+                skills: "Skills",
+                experience: "Experience",
+                education: "Education",
+                projects: "Projects",
+                life: "Life Events",
+                languages: "Languages",
+                contact: "Contact",
+              }[entry.type] || entry.type;
+
+            // Title bar for this clone
+            const titleEl = document.createElement("div");
+            titleEl.className = "ep-section-title";
+            titleEl.style.marginTop = "1rem";
+            titleEl.textContent = label + " (" + typeLabel + ")";
+            clonesWrap.appendChild(titleEl);
+
+            // Item list
+            const listEl = document.createElement("div");
+            listEl.className = "item-list";
+            listEl.id = "clone-list-" + cloneId;
+            clonesWrap.appendChild(listEl);
+
+            // Add button
+            const addBtn = document.createElement("button");
+            addBtn.className = "ep-btn primary";
+            addBtn.style.marginBottom = ".5rem";
+            addBtn.textContent = "+ Add item";
+            addBtn.onclick = () => openCloneModal(cloneId, -1);
+            clonesWrap.appendChild(addBtn);
+
+            // Populate list
+            renderCloneList(cloneId);
+          });
+        }
+      }
+
+      function renderCloneList(cloneId) {
+        const entry = sectionRegistry[cloneId];
+        if (!entry) return;
+        const listEl = document.getElementById("clone-list-" + cloneId);
+        if (!listEl) return;
+        listEl.innerHTML = "";
+        entry.data.forEach((item, i) => {
+          const row = document.createElement("div");
+          row.className = "item-row";
+          let label = "",
+            sub = "";
+          switch (entry.type) {
+            case "skills":
+              label = t(item.category);
+              sub = item.tags.join(", ");
+              break;
+            case "experience":
+            case "education":
+              label = t(item.title);
+              sub = item.org + " · " + t(item.date);
+              break;
+            case "projects":
+              label = t(item.name);
+              sub = item.year + " · " + item.stack.join(", ");
+              break;
+            case "life":
+              label = item.icon + " " + t(item.title);
+              sub = t(item.date);
+              break;
+            case "languages":
+              label = t(item.name);
+              sub = item.level + " · " + item.pct + "%";
+              break;
+            case "contact":
+              label = item.icon + " " + item.label;
+              sub = item.value;
+              break;
+          }
+          row.innerHTML = `<div><div class="item-row-label">${label}</div><div class="item-row-sub">${sub}</div></div>
+            <div class="item-row-btns">
+              <button class="item-btn" onclick="openCloneModal('${cloneId}',${i})">Edit</button>
+              <button class="item-btn danger" onclick="deleteCloneItem('${cloneId}',${i})">✕</button>
+            </div>`;
+          listEl.appendChild(row);
+        });
       }
 
       function deleteSkill(i) {
@@ -3049,6 +3364,108 @@
         renderContact();
         renderContentList();
         showToast("🗑 Contact removed");
+      }
+
+      /* ═══════════════════════════════════════════
+   CLONE ITEM CRUD
+═══════════════════════════════════════════ */
+      function deleteCloneItem(cloneId, i) {
+        sectionRegistry[cloneId].data.splice(i, 1);
+        renderSection(cloneId);
+        renderCloneList(cloneId);
+        showToast("🗑 Item removed");
+      }
+
+      function openCloneModal(cloneId, idx) {
+        const entry = sectionRegistry[cloneId];
+        if (!entry) return;
+        const item = idx >= 0 ? entry.data[idx] : null;
+        modalMode = { type: "clone_" + entry.type, cloneId, index: idx };
+        // Reuse the existing modal builders — delegate to the type-specific ones
+        // but set modalMode so submitModal saves to registry
+        const typeToModal = {
+          skills: () => _buildSkillFields(item),
+          experience: () => _buildTimelineFields(item),
+          education: () => _buildTimelineFields(item),
+          projects: () => _buildProjectFields(item),
+          life: () => _buildEventFields(item),
+          languages: () => _buildLangFields(item),
+          contact: () => _buildContactFields(item),
+        };
+        const builder = typeToModal[entry.type];
+        if (!builder) return;
+        const secEntry = sectionsOrder.find((s) => s.id === cloneId);
+        const sLabel = secEntry ? secEntry.label : cloneId;
+        document.getElementById("modal-title").textContent =
+          (idx >= 0 ? "Edit" : "Add") + " — " + sLabel;
+        document.getElementById("modal-fields").innerHTML = builder();
+        document.getElementById("modal-overlay").classList.add("open");
+      }
+
+      // Field builders (return HTML string)
+      function _buildSkillFields(item) {
+        return `<div class="modal-row">
+          <div class="modal-field"><label>Category (EN)</label><input id="mf-cat-en" value="${item ? esc(item.category.en || item.category) : ""}"/></div>
+          <div class="modal-field"><label>Category (FR)</label><input id="mf-cat-fr" value="${item ? esc(item.category.fr || item.category.en || item.category) : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Tags (comma-separated)</label><input id="mf-tags" value="${item ? esc(item.tags.join(", ")) : ""}"/></div>`;
+      }
+      function _buildTimelineFields(item) {
+        const bEn = item ? (item.bullets.en || []).join("\n") : "";
+        const bFr = item ? (item.bullets.fr || []).join("\n") : "";
+        return `<div class="modal-row">
+          <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
+          <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item ? esc(item.date.fr || "") : ""}"/></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item ? esc(t(item.title)) : ""}"/></div>
+          <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item && item.title.fr ? esc(item.title.fr) : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Organisation</label><input id="mf-org" value="${item ? esc(item.org) : ""}"/></div>
+        <div class="modal-field"><label>Bullets EN (one per line)</label><textarea id="mf-bullets-en" rows="3">${bEn}</textarea></div>
+        <div class="modal-field"><label>Bullets FR (one per line)</label><textarea id="mf-bullets-fr" rows="3">${bFr}</textarea></div>`;
+      }
+      function _buildProjectFields(item) {
+        return `<div class="modal-row">
+          <div class="modal-field"><label>Year</label><input id="mf-year" value="${item ? item.year : "2025"}"/></div>
+          <div class="modal-field"><label>Stack (comma-sep.)</label><input id="mf-stack" value="${item ? esc(item.stack.join(", ")) : ""}"/></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Name (EN)</label><input id="mf-name-en" value="${item ? esc(t(item.name)) : ""}"/></div>
+          <div class="modal-field"><label>Name (FR)</label><input id="mf-name-fr" value="${item && item.name && item.name.fr ? esc(item.name.fr) : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${item ? item.desc.en || t(item.desc) : ""}</textarea></div>
+        <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${item ? item.desc.fr || "" : ""}</textarea></div>
+        <div class="modal-field"><label>Link (optional)</label><input id="mf-link" value="${item && item.link ? esc(item.link) : ""}" placeholder="https://"/></div>`;
+      }
+      function _buildEventFields(item) {
+        return `<div class="modal-field"><label>Icon (emoji)</label><input id="mf-icon" value="${item ? item.icon : "⭐"}"/></div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
+          <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item ? esc(item.date.fr || "") : ""}"/></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item ? esc(item.title.en) : ""}"/></div>
+          <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item ? esc(item.title.fr || "") : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${item ? item.desc.en : ""}</textarea></div>
+        <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${item ? item.desc.fr || "" : ""}</textarea></div>`;
+      }
+      function _buildLangFields(item) {
+        return `<div class="modal-row">
+          <div class="modal-field"><label>Name (EN)</label><input id="mf-lang-en" value="${item ? esc(t(item.name)) : ""}"/></div>
+          <div class="modal-field"><label>Name (FR)</label><input id="mf-lang-fr" value="${item && item.name.fr ? esc(item.name.fr) : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Level (e.g. C1 — Advanced)</label><input id="mf-lang-level" value="${item ? esc(item.level) : ""}"/></div>
+        <div class="modal-field"><label>Proficiency % (0–100)</label><input type="number" id="mf-lang-pct" min="0" max="100" value="${item ? item.pct : 50}"/></div>`;
+      }
+      function _buildContactFields(item) {
+        return `<div class="modal-row">
+          <div class="modal-field"><label>Icon (emoji)</label><input id="mf-c-icon" value="${item ? esc(item.icon) : "🔗"}"/></div>
+          <div class="modal-field"><label>Label</label><input id="mf-c-label" value="${item ? esc(item.label) : ""}"/></div>
+        </div>
+        <div class="modal-field"><label>Display value</label><input id="mf-c-value" value="${item ? esc(item.value) : ""}"/></div>
+        <div class="modal-field"><label>URL / href</label><input id="mf-c-href" value="${item ? esc(item.href) : ""}" placeholder="https:// or mailto:"/></div>`;
       }
 
       /* ═══════════════════════════════════════════
@@ -3312,10 +3729,142 @@
           else contactData.push(obj);
           renderContact();
           showToast(index >= 0 ? "✓ Contact updated" : "✓ Contact added");
+        } else if (type && type.startsWith("clone_")) {
+          const { cloneId, index } = modalMode;
+          const entry = sectionRegistry[cloneId];
+          if (entry) {
+            // For life events, preserve existing img if editing
+            const obj = _readCloneObj(entry.type);
+            if (entry.type === "life" && index >= 0)
+              obj.img = entry.data[index].img || null;
+            if (index >= 0) entry.data[index] = obj;
+            else entry.data.push(obj);
+            renderSection(cloneId);
+            renderCloneList(cloneId);
+            showToast(index >= 0 ? "✓ Item updated" : "✓ Item added");
+          }
         }
-
         renderContentList();
         closeModal();
+      }
+
+      function _readCloneObj(type) {
+        switch (type) {
+          case "skills":
+            return {
+              category: {
+                en: document.getElementById("mf-cat-en").value,
+                fr:
+                  document.getElementById("mf-cat-fr").value ||
+                  document.getElementById("mf-cat-en").value,
+              },
+              tags: document
+                .getElementById("mf-tags")
+                .value.split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            };
+          case "experience":
+          case "education": {
+            const bEn = document
+              .getElementById("mf-bullets-en")
+              .value.split("\n")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const bFr = document
+              .getElementById("mf-bullets-fr")
+              .value.split("\n")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            return {
+              date: {
+                en: document.getElementById("mf-date-en").value,
+                fr:
+                  document.getElementById("mf-date-fr").value ||
+                  document.getElementById("mf-date-en").value,
+              },
+              title: {
+                en: document.getElementById("mf-title-en").value,
+                fr:
+                  document.getElementById("mf-title-fr").value ||
+                  document.getElementById("mf-title-en").value,
+              },
+              org: document.getElementById("mf-org").value,
+              bullets: { en: bEn, fr: bFr.length ? bFr : bEn },
+            };
+          }
+          case "projects":
+            return {
+              year: document.getElementById("mf-year").value,
+              name: {
+                en: document.getElementById("mf-name-en").value,
+                fr:
+                  document.getElementById("mf-name-fr").value ||
+                  document.getElementById("mf-name-en").value,
+              },
+              desc: {
+                en: document.getElementById("mf-desc-en").value,
+                fr:
+                  document.getElementById("mf-desc-fr").value ||
+                  document.getElementById("mf-desc-en").value,
+              },
+              stack: document
+                .getElementById("mf-stack")
+                .value.split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+              link: document.getElementById("mf-link").value.trim() || null,
+            };
+          case "life":
+            return {
+              icon: document.getElementById("mf-icon").value,
+              date: {
+                en: document.getElementById("mf-date-en").value,
+                fr:
+                  document.getElementById("mf-date-fr").value ||
+                  document.getElementById("mf-date-en").value,
+              },
+              title: {
+                en: document.getElementById("mf-title-en").value,
+                fr:
+                  document.getElementById("mf-title-fr").value ||
+                  document.getElementById("mf-title-en").value,
+              },
+              desc: {
+                en: document.getElementById("mf-desc-en").value,
+                fr:
+                  document.getElementById("mf-desc-fr").value ||
+                  document.getElementById("mf-desc-en").value,
+              },
+              img: null,
+            };
+          case "languages":
+            return {
+              name: {
+                en: document.getElementById("mf-lang-en").value,
+                fr:
+                  document.getElementById("mf-lang-fr").value ||
+                  document.getElementById("mf-lang-en").value,
+              },
+              level: document.getElementById("mf-lang-level").value,
+              pct: Math.min(
+                100,
+                Math.max(
+                  0,
+                  parseInt(document.getElementById("mf-lang-pct").value) || 0,
+                ),
+              ),
+            };
+          case "contact":
+            return {
+              icon: document.getElementById("mf-c-icon").value,
+              label: document.getElementById("mf-c-label").value,
+              value: document.getElementById("mf-c-value").value,
+              href: document.getElementById("mf-c-href").value,
+            };
+          default:
+            return null;
+        }
       }
 
       function closeModal() {
@@ -3359,6 +3908,15 @@
           eventsData,
           languagesData,
           contactData,
+          sectionRegistry: JSON.parse(JSON.stringify(sectionRegistry)),
+          sectionsOrderMeta: sectionsOrder.map((s) => ({
+            id: s.id,
+            type: s.type,
+            label: s.label,
+            labelEn: s.labelEn,
+            labelFr: s.labelFr,
+            visible: s.visible,
+          })),
           heroBgText: document
             .getElementById("hero-bg-text")
             .textContent.trim(),
@@ -3444,6 +4002,33 @@
             if (snap.heroBgText)
               document.getElementById("hero-bg-text").textContent =
                 snap.heroBgText;
+
+            // Restore cloned sections registry
+            if (snap.sectionRegistry) {
+              Object.keys(sectionRegistry).forEach(
+                (k) => delete sectionRegistry[k],
+              );
+              Object.assign(sectionRegistry, snap.sectionRegistry);
+            }
+            if (snap.sectionsOrderMeta) {
+              snap.sectionsOrderMeta.forEach((meta) => {
+                const existing = sectionsOrder.find((s) => s.id === meta.id);
+                if (existing) {
+                  existing.label = meta.label;
+                  existing.labelEn = meta.labelEn;
+                  existing.labelFr = meta.labelFr;
+                } else {
+                  sectionsOrder.push({
+                    id: meta.id,
+                    type: meta.type,
+                    label: meta.label,
+                    labelEn: meta.labelEn,
+                    labelFr: meta.labelFr,
+                    visible: meta.visible,
+                  });
+                }
+              });
+            }
 
             // Restore CSS vars / theme
             if (snap.cssVars)
@@ -3652,7 +4237,7 @@
           ".hd-name em{opacity:.8}",
           ".hd-subtitle{font-family:'DM Serif Display',serif;font-style:italic;font-size:10.5pt;color:rgba(255,255,255,.72);margin-top:3px}",
           ".hd-right{text-align:right;flex-shrink:0}",
-          ".ci{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:7pt;color:rgba(255,255,255,.82);margin-bottom:3px;justify-content:flex-end}",
+          ".ci{display:flex;align-items:center;gap:5px;font-family:DM Mono,monospace;font-size:7pt;color:rgba(255,255,255,.82);margin-bottom:3px;justify-content:flex-end}",
           ".ci a{color:rgba(255,255,255,.82)}",
           ".ci-icon{font-size:8.5pt}",
           // BODY columns
@@ -3661,7 +4246,7 @@
           ".main-col{flex:1;padding:7mm 10mm 8mm 9mm;min-width:0}",
           // Sections
           ".rs{margin-bottom:9px}",
-          ".rs-title{font-family:'DM Mono',monospace;font-size:6.2pt;letter-spacing:.22em;text-transform:uppercase;color:" +
+          ".rs-title{font-family:DM Mono,monospace;font-size:6.2pt;letter-spacing:.22em;text-transform:uppercase;color:" +
             accent +
             ";padding-bottom:3px;border-bottom:1.5px solid " +
             aMid +
@@ -3670,18 +4255,18 @@
           ".about{font-size:7.5pt;color:#555;line-height:1.6}",
           // Skills
           ".sk-group{margin-bottom:7px;page-break-inside:avoid;break-inside:avoid}",
-          ".sk-cat{font-family:'DM Mono',monospace;font-size:6pt;color:#999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}",
+          ".sk-cat{font-family:DM Mono,monospace;font-size:6pt;color:#999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}",
           ".sk-pills{display:flex;flex-wrap:wrap;gap:3px}",
           ".pill{background:" +
             aLight +
             ";border:1px solid " +
             aMid +
-            ";color:#333;font-family:'DM Mono',monospace;font-size:6.2pt;padding:1.5px 5px;border-radius:3px;white-space:nowrap}",
+            ";color:#333;font-family:DM Mono,monospace;font-size:6.2pt;padding:1.5px 5px;border-radius:3px;white-space:nowrap}",
           // Languages
           ".lang-row{margin-bottom:6px;page-break-inside:avoid;break-inside:avoid}",
           ".lang-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}",
           ".lang-n{font-size:8pt;color:#222;font-weight:500}",
-          ".lang-lv{font-family:'DM Mono',monospace;font-size:6pt;color:#aaa}",
+          ".lang-lv{font-family:DM Mono,monospace;font-size:6pt;color:#aaa}",
           ".lang-bar-wrap{height:3px;background:#e2e2e2;border-radius:2px;overflow:hidden}",
           ".lang-bar-fill{height:100%;background:" +
             accent +
@@ -3691,7 +4276,7 @@
           ".tl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:2px}",
           ".tl-left{flex:1;min-width:0}",
           ".tl-title{font-family:'DM Serif Display',serif;font-size:9.5pt;color:#111;line-height:1.2}",
-          ".tl-date{font-family:'DM Mono',monospace;font-size:6.5pt;color:#aaa;white-space:nowrap;padding-top:2px;flex-shrink:0}",
+          ".tl-date{font-family:DM Mono,monospace;font-size:6.5pt;color:#aaa;white-space:nowrap;padding-top:2px;flex-shrink:0}",
           ".tl-org{font-size:7.2pt;color:" +
             accent +
             ";font-weight:600;margin-top:1px;margin-bottom:3px}",
@@ -3704,7 +4289,7 @@
             ";border-radius:4px;padding:5px 7px;page-break-inside:avoid;break-inside:avoid}",
           ".proj-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}",
           ".proj-name{font-family:'DM Serif Display',serif;font-size:8.5pt;color:#111}",
-          ".proj-year{font-family:'DM Mono',monospace;font-size:6pt;color:#ccc}",
+          ".proj-year{font-family:DM Mono,monospace;font-size:6pt;color:#ccc}",
           ".proj-stack{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:3px}",
           ".pill-sm{font-size:5.5pt;padding:1px 4px}",
           ".proj-desc{font-size:7pt;color:#555;line-height:1.5}",
@@ -3718,6 +4303,153 @@
         var lngLabel = lang === "fr" ? "Langues" : "Languages";
         var eduLabel = lang === "fr" ? "Formation" : "Education";
         var abtLabel = lang === "fr" ? "À propos" : "About";
+
+        // Cloned sections for PDF
+        var clonedPdfSections = Object.keys(sectionRegistry)
+          .map(function (cid) {
+            var entry = sectionRegistry[cid];
+            var secEntry = sectionsOrder.find(function (s) {
+              return s.id === cid;
+            });
+            var cLabel = secEntry
+              ? lang === "fr" && secEntry.labelFr
+                ? secEntry.labelFr
+                : secEntry.labelEn || secEntry.label
+              : cid;
+            var inner = "";
+            switch (entry.type) {
+              case "skills":
+                inner = entry.data
+                  .map(function (s) {
+                    var pills = s.tags
+                      .map(function (tag) {
+                        return '<span class="pill">' + tag + "</span>";
+                      })
+                      .join("");
+                    return (
+                      '<div class="sk-group"><div class="sk-cat">' +
+                      tl(s.category) +
+                      '</div><div class="sk-pills">' +
+                      pills +
+                      "</div></div>"
+                    );
+                  })
+                  .join("");
+                break;
+              case "experience":
+              case "education":
+                inner = entry.data
+                  .map(function (item) {
+                    var buls = (item.bullets[lang] || item.bullets.en || [])
+                      .map(function (b) {
+                        return "<li>" + b + "</li>";
+                      })
+                      .join("");
+                    return (
+                      '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
+                      tl(item.title) +
+                      '</div><div class="tl-org">' +
+                      item.org +
+                      '</div></div><span class="tl-date">' +
+                      tl(item.date) +
+                      '</span></div><ul class="tl-bullets">' +
+                      buls +
+                      "</ul></div>"
+                    );
+                  })
+                  .join("");
+                break;
+              case "projects":
+                inner =
+                  '<div class="proj-grid">' +
+                  entry.data
+                    .slice(0, 6)
+                    .map(function (p) {
+                      var pills = p.stack
+                        .map(function (s) {
+                          return '<span class="pill pill-sm">' + s + "</span>";
+                        })
+                        .join("");
+                      var lnk = p.link
+                        ? ' <a class="proj-link" href="' +
+                          p.link +
+                          '">' +
+                          String.fromCharCode(8599) +
+                          "</a>"
+                        : "";
+                      return (
+                        '<div class="proj"><div class="proj-top"><span class="proj-name">' +
+                        tl(p.name) +
+                        '</span><span class="proj-year">' +
+                        p.year +
+                        '</span></div><div class="proj-stack">' +
+                        pills +
+                        '</div><div class="proj-desc">' +
+                        tl(p.desc) +
+                        lnk +
+                        "</div></div>"
+                      );
+                    })
+                    .join("") +
+                  "</div>";
+                break;
+              case "languages":
+                inner = entry.data
+                  .map(function (l) {
+                    return (
+                      '<div class="lang-row"><div class="lang-meta"><span class="lang-n">' +
+                      tl(l.name) +
+                      '</span><span class="lang-lv">' +
+                      l.level +
+                      '</span></div><div class="lang-bar-wrap"><div class="lang-bar-fill" style="width:' +
+                      l.pct +
+                      '%"></div></div></div>'
+                    );
+                  })
+                  .join("");
+                break;
+              case "contact":
+                inner = entry.data
+                  .map(function (c) {
+                    return (
+                      '<span class="ci"><span class="ci-icon">' +
+                      c.icon +
+                      '</span><a href="' +
+                      c.href +
+                      '">' +
+                      c.value +
+                      "</a></span>"
+                    );
+                  })
+                  .join("");
+                break;
+              case "life":
+                inner = entry.data
+                  .map(function (ev) {
+                    return (
+                      '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
+                      ev.icon +
+                      " " +
+                      tl(ev.title) +
+                      '</div></div><span class="tl-date">' +
+                      tl(ev.date) +
+                      '</span></div><div class="about">' +
+                      tl(ev.desc) +
+                      "</div></div>"
+                    );
+                  })
+                  .join("");
+                break;
+            }
+            return inner
+              ? '<div class="rs"><div class="rs-title">' +
+                  cLabel +
+                  "</div>" +
+                  inner +
+                  "</div>"
+              : "";
+          })
+          .join("");
 
         var body =
           "" +
@@ -3769,6 +4501,7 @@
           '</div><div class="proj-grid">' +
           projHTML +
           "</div></div>" +
+          clonedPdfSections +
           "</div>" +
           "</div>" +
           "</div>";
@@ -3927,6 +4660,279 @@
       renderContentList();
       setLang("en");
       syncColorPickers(themes[0]);
+    </script>
+
+    <!-- ══ WELCOME MODAL ══ -->
+    <style>
+      #fp-welcome {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.78);
+        z-index: 9000;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        backdrop-filter: blur(4px);
+      }
+      #fp-welcome.open {
+        display: flex;
+      }
+      .fp-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 2.5rem 2.25rem;
+        max-width: 500px;
+        width: 100%;
+        animation: fpIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        position: relative;
+      }
+      @keyframes fpIn {
+        from {
+          opacity: 0;
+          transform: translateY(24px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .fp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        padding: 0.3rem 0.9rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+      }
+      .fp-badge::before {
+        content: "⚡";
+      }
+      .fp-card h2 {
+        font-family: "DM Serif Display", serif;
+        font-size: clamp(1.4rem, 4vw, 1.9rem);
+        color: var(--text);
+        line-height: 1.15;
+        margin-bottom: 0.5rem;
+      }
+      .fp-card h2 em {
+        font-style: italic;
+        color: var(--accent);
+      }
+      .fp-card > p {
+        font-size: 0.88rem;
+        color: var(--muted);
+        line-height: 1.65;
+        margin-bottom: 1.75rem;
+      }
+      .fp-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-bottom: 1.75rem;
+      }
+      .fp-feat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.8rem 0.9rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        transition: border-color 0.2s;
+      }
+      .fp-feat:hover {
+        border-color: var(--accent);
+      }
+      .fp-feat-icon {
+        font-size: 1.15rem;
+        flex-shrink: 0;
+        line-height: 1;
+        padding-top: 0.05rem;
+      }
+      .fp-feat-body {
+        min-width: 0;
+      }
+      .fp-feat-body strong {
+        display: block;
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+        margin-bottom: 0.2rem;
+      }
+      .fp-feat-body span {
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .fp-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+      .fp-btn {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border-radius: 9px;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: 0.2s;
+        border: none;
+      }
+      .fp-btn-primary {
+        background: var(--accent);
+        color: var(--bg);
+        font-weight: 500;
+      }
+      .fp-btn-primary:hover {
+        background: var(--accent2);
+        transform: translateY(-1px);
+      }
+      .fp-btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border) !important;
+      }
+      .fp-btn-ghost:hover {
+        border-color: var(--accent) !important;
+        color: var(--text);
+      }
+      .fp-close {
+        position: absolute;
+        top: 1.1rem;
+        right: 1.1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: 0.2s;
+      }
+      .fp-close:hover {
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+      }
+      @media (max-width: 480px) {
+        .fp-grid {
+          grid-template-columns: 1fr;
+        }
+        .fp-card {
+          padding: 1.75rem 1.5rem;
+        }
+      }
+    </style>
+
+    <div id="fp-welcome">
+      <div class="fp-card">
+        <button class="fp-close" onclick="fpClose()">✕</button>
+        <div class="fp-badge">Flash Portfolio</div>
+        <h2>Your portfolio,<br /><em>your way.</em></h2>
+        <p>
+          Everything is editable, themeable, and ready to deploy in under a
+          minute. Here's what you can do:
+        </p>
+        <div class="fp-grid">
+          <div class="fp-feat">
+            <span class="fp-feat-icon">🎨</span>
+            <div class="fp-feat-body">
+              <strong>Theme</strong>
+              <span>8 presets, full color &amp; font control</span>
+            </div>
+          </div>
+          <div class="fp-feat">
+            <span class="fp-feat-icon">✏️</span>
+            <div class="fp-feat-body">
+              <strong>Click-to-Edit</strong>
+              <span>Click any text on the page to change it</span>
+            </div>
+          </div>
+          <div class="fp-feat">
+            <span class="fp-feat-icon">⧉</span>
+            <div class="fp-feat-body">
+              <strong>Clone Sections</strong>
+              <span>Duplicate any section with independent data</span>
+            </div>
+          </div>
+          <div class="fp-feat">
+            <span class="fp-feat-icon">📝</span>
+            <div class="fp-feat-body">
+              <strong>Content Editor</strong>
+              <span>Add, edit &amp; delete items in every section</span>
+            </div>
+          </div>
+          <div class="fp-feat">
+            <span class="fp-feat-icon">📄</span>
+            <div class="fp-feat-body">
+              <strong>PDF Resume</strong>
+              <span>Export a clean A4 resume in one click</span>
+            </div>
+          </div>
+          <div class="fp-feat">
+            <span class="fp-feat-icon">💾</span>
+            <div class="fp-feat-body">
+              <strong>Export &amp; Import</strong>
+              <span>Save progress, re-open and keep editing</span>
+            </div>
+          </div>
+        </div>
+        <div class="fp-actions">
+          <button class="fp-btn fp-btn-primary" onclick="fpClose()">
+            Get started →
+          </button>
+          <button class="fp-btn fp-btn-ghost" onclick="fpClose()">
+            I'll explore on my own
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var KEY = "fp-seen";
+        function fpClose() {
+          document.getElementById("fp-welcome").classList.remove("open");
+          try {
+            localStorage.setItem(KEY, "1");
+          } catch (e) {}
+        }
+        window.fpClose = fpClose;
+        setTimeout(function () {
+          document.getElementById("fp-welcome").classList.add("open");
+        }, 500);
+        // Reopen button in Theme tab
+        var themeTab = document.getElementById("tab-theme");
+        if (themeTab) {
+          var sep = document.createElement("div");
+          sep.className = "ep-section-title";
+          sep.textContent = "Help";
+          var btn = document.createElement("button");
+          btn.className = "ep-btn";
+          btn.textContent = "ℹ About Flash Portfolio";
+          btn.onclick = function () {
+            document.getElementById("fp-welcome").classList.add("open");
+          };
+          themeTab.appendChild(sep);
+          themeTab.appendChild(btn);
+        }
+      })();
+      toggleEditor();
     </script>
   </body>
 </html>
