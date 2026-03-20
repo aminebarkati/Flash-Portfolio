@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Flash Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ════════════════════════════════════════════
+   CSS VARIABLES — editable by theme engine
+════════════════════════════════════════════ */
+:root {
+  --bg:#0b0c0f; --bg2:#111318; --bg3:#181b22;
+  --surface:#1e2128; --border:#2a2d36;
+  --accent:#c9a96e; --accent2:#e8c99a;
+  --text:#e8e6e1; --muted:#7a7d8a; --muted2:#555866;
+  --radius:12px; --transition:0.35s cubic-bezier(.4,0,.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;line-height:1.7;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.03;pointer-events:none;z-index:9998}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:99px}
+
+/* ── EDIT MODE INDICATOR ── */
+body.edit-mode [contenteditable]{outline:1px dashed rgba(201,169,110,.4);border-radius:4px;cursor:text;transition:outline .2s}
+body.edit-mode [contenteditable]:hover{outline:1px solid var(--accent);background:rgba(201,169,110,.05)}
+body.edit-mode [contenteditable]:focus{outline:2px solid var(--accent);background:rgba(201,169,110,.08);outline-offset:2px}
+
+/* ── EDITOR TOGGLE BUTTON ── */
+#edit-toggle{
+  position:fixed;bottom:2rem;right:2rem;z-index:5000;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--accent);color:var(--bg);
+  border:none;cursor:pointer;font-size:1.2rem;
+  box-shadow:0 8px 24px rgba(201,169,110,.35);
+  transition:var(--transition);display:flex;align-items:center;justify-content:center;
+}
+#edit-toggle:hover{transform:scale(1.1);box-shadow:0 12px 32px rgba(201,169,110,.5)}
+#edit-toggle.active{background:var(--text);color:var(--bg)}
+
+/* ── EDITOR PANEL ── */
+#editor-panel{
+  position:fixed;right:0;top:0;bottom:0;width:340px;
+  background:var(--bg2);border-left:1px solid var(--border);
+  z-index:4000;transform:translateX(100%);
+  transition:transform var(--transition);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#editor-panel.open{transform:translateX(0)}
+body.panel-open main,body.panel-open footer{margin-right:340px;transition:margin var(--transition)}
+body.panel-open nav{transition:none}
+
+.ep-header{
+  padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.ep-title{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--accent)}
+.ep-close{background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:.25rem;line-height:1;transition:color var(--transition)}
+.ep-close:hover{color:var(--text)}
+
+.ep-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.ep-tab{
+  flex:1;padding:.75rem;background:none;border:none;
+  font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.1em;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:var(--transition);text-transform:uppercase;
+}
+.ep-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.ep-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:1.25rem}
+.ep-body::-webkit-scrollbar{width:3px}
+.ep-body::-webkit-scrollbar-thumb{background:var(--border)}
+
+.ep-section-title{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.15em;color:var(--muted2);text-transform:uppercase;margin:1.25rem 0 .6rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+.ep-section-title:first-child{margin-top:0}
+
+/* form controls */
+.ep-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;min-width:0}
+.ep-row label{font-size:.75rem;color:var(--muted);min-width:72px;max-width:72px;font-family:'DM Mono',monospace;flex-shrink:0;line-height:1.3}
+.ep-row input[type="color"]{width:36px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;padding:2px;flex-shrink:0}
+.ep-row input[type="text"],.ep-row input[type="number"]{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.4rem .65rem;border-radius:6px;font-size:.78rem;font-family:'Outfit',sans-serif;transition:border-color var(--transition)}
+.ep-row input:focus{outline:none;border-color:var(--accent)}
+.ep-row select{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.4rem .65rem;border-radius:6px;font-size:.78rem;font-family:'Outfit',sans-serif;cursor:pointer}
+.ep-row select:focus{outline:none;border-color:var(--accent)}
+
+/* theme presets */
+.theme-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1rem}
+.preset-btn{
+  padding:.5rem;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);cursor:pointer;font-size:.65rem;
+  font-family:'DM Mono',monospace;color:var(--muted);
+  display:flex;flex-direction:column;align-items:center;gap:.35rem;
+  transition:var(--transition);
+}
+.preset-btn:hover{border-color:var(--accent);color:var(--text)}
+.preset-swatch{width:28px;height:12px;border-radius:3px}
+
+/* section visibility list */
+.section-list{display:flex;flex-direction:column;gap:.5rem}
+.section-row{
+  display:flex;align-items:center;gap:.75rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:.6rem .9rem;cursor:grab;
+  transition:var(--transition);
+}
+.section-row:hover{border-color:var(--border);background:var(--bg3)}
+.section-row.dragging{opacity:.4;cursor:grabbing}
+.section-row.drag-over{border-color:var(--accent);background:rgba(201,169,110,.06)}
+.drag-handle{color:var(--muted2);font-size:.9rem;cursor:grab;flex-shrink:0}
+.section-row-name{flex:1;font-size:.82rem;color:var(--text);border-radius:4px;padding:.1rem .3rem;margin:0 -.3rem;outline:none;cursor:text;transition:background var(--transition)}
+.section-row-name:hover{background:rgba(201,169,110,.07)}
+.section-row-name:focus{background:rgba(201,169,110,.12);outline:1px solid var(--accent)}
+.toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:99px;cursor:pointer;transition:var(--transition)}
+.toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;background:var(--muted2);border-radius:50%;transition:var(--transition)}
+.toggle-switch input:checked+.toggle-slider{background:var(--accent)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px);background:var(--bg)}
+
+/* project/event editor list */
+.item-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem}
+.item-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:.65rem .9rem;
+  display:flex;align-items:flex-start;gap:.6rem;
+  transition:var(--transition);
+}
+.item-row>div:first-child{flex:1;min-width:0}
+.item-row-label{font-size:.78rem;color:var(--text);word-break:break-word;line-height:1.4}
+.item-row-sub{font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:.2rem;word-break:break-word;line-height:1.4}
+.item-row-btns{display:flex;gap:.35rem;flex-shrink:0;padding-top:.1rem}
+.item-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:.25rem .5rem;font-size:.7rem;cursor:pointer;font-family:'DM Mono',monospace;transition:var(--transition);white-space:nowrap}
+.item-btn:hover{color:var(--text);border-color:var(--accent)}
+.item-btn.danger:hover{color:#e74c3c;border-color:#e74c3c}
+
+.ep-btn{
+  width:100%;padding:.6rem;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;
+  font-size:.72rem;letter-spacing:.06em;cursor:pointer;transition:var(--transition);
+  margin-bottom:.5rem;
+}
+.ep-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ep-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:500}
+.ep-btn.primary:hover{background:var(--accent2);color:var(--bg)}
+
+/* ── MODAL ── */
+#modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:6000;
+  align-items:center;justify-content:center;padding:1rem;
+}
+#modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+  padding:1.75rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+}
+.modal h3{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--accent);margin-bottom:1.25rem}
+.modal-field{margin-bottom:1rem}
+.modal-field label{display:block;font-size:.72rem;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.08em;margin-bottom:.35rem;text-transform:uppercase}
+.modal-field input,.modal-field textarea{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:.55rem .8rem;border-radius:8px;
+  font-size:.85rem;font-family:'Outfit',sans-serif;resize:vertical;
+  min-width:0;box-sizing:border-box;
+}
+.modal-field input:focus,.modal-field textarea:focus{outline:none;border-color:var(--accent)}
+.modal-field textarea{min-height:80px}
+.modal-row{display:flex;gap:.75rem;flex-wrap:wrap}
+.modal-row .modal-field{flex:1;min-width:140px}
+.modal-actions{display:flex;gap:.75rem;margin-top:1.25rem}
+.modal-actions .ep-btn{margin-bottom:0}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:5.5rem;right:2rem;z-index:7000;
+  background:var(--surface);border:1px solid var(--accent);
+  color:var(--text);padding:.65rem 1.25rem;border-radius:8px;
+  font-family:'DM Mono',monospace;font-size:.75rem;
+  transform:translateY(20px);opacity:0;transition:all .3s ease;pointer-events:none;
+}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ══════════════════════════════
+   LANGUAGE TOGGLE
+══════════════════════════════ */
+#lang-toggle{
+  position:fixed;top:1.5rem;right:1.5rem;z-index:1000;display:flex;
+  background:var(--surface);border:1px solid var(--border);border-radius:99px;overflow:hidden;
+  font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.08em;
+}
+.lang-btn{padding:.45rem 1rem;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:var(--transition);font-family:inherit;font-size:inherit;letter-spacing:inherit}
+.lang-btn.active{background:var(--accent);color:var(--bg);font-weight:500}
+
+/* ══════════════════════════════
+   SIDEBAR NAV
+══════════════════════════════ */
+nav{
+  position:fixed;left:0;top:0;bottom:0;width:220px;
+  padding:2.5rem 1.5rem;display:flex;flex-direction:column;gap:.5rem;
+  border-right:1px solid var(--border);background:var(--bg);
+  z-index:100;transition:transform var(--transition);
+}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--accent);margin-bottom:2rem;line-height:1.3}
+.nav-logo span{display:block;font-style:italic;font-size:.8rem;color:var(--muted);font-family:'Outfit',sans-serif;font-weight:300}
+.nav-link{display:flex;align-items:center;gap:.75rem;padding:.55rem .75rem;border-radius:8px;color:var(--muted);text-decoration:none;font-size:.82rem;letter-spacing:.04em;transition:var(--transition);font-family:'DM Mono',monospace}
+.nav-link:hover,.nav-link.active{color:var(--text);background:var(--surface)}
+.nav-link .dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0;transition:var(--transition)}
+.nav-link:hover .dot,.nav-link.active .dot{background:var(--accent)}
+.nav-socials{margin-top:auto;display:flex;gap:.75rem}
+.nav-social{color:var(--muted2);text-decoration:none;font-size:.75rem;font-family:'DM Mono',monospace;transition:color var(--transition)}
+.nav-social:hover{color:var(--accent)}
+
+/* ══════════════════════════════
+   HAMBURGER
+══════════════════════════════ */
+#hamburger{display:none;position:fixed;top:1.25rem;left:1.25rem;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .65rem;cursor:pointer;flex-direction:column;gap:4px}
+#hamburger span{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+/* ══════════════════════════════
+   MAIN
+══════════════════════════════ */
+main{margin-left:220px;min-height:100vh;transition:margin var(--transition)}
+section{padding:6rem 5rem;border-bottom:1px solid var(--border);opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease}
+section.visible{opacity:1;transform:translateY(0)}
+section[data-hidden="true"]{display:none}
+
+/* ══════════════════════════════
+   HERO
+══════════════════════════════ */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:6rem 5rem;position:relative;overflow:hidden;border-bottom:1px solid var(--border);opacity:1;transform:none}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem}
+.hero-eyebrow::after{content:'';flex:1;max-width:80px;height:1px;background:var(--accent);opacity:.4}
+.hero-name{font-family:'DM Serif Display',serif;font-size:clamp(3rem,7vw,6rem);line-height:1.05;margin-bottom:.25rem;color:var(--text)}
+.hero-name em{font-style:italic;color:var(--accent)}
+.hero-title{font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(1.2rem,3vw,2rem);color:var(--muted);margin-bottom:2rem}
+.hero-desc{max-width:520px;color:var(--muted);font-size:.95rem;margin-bottom:2.5rem}
+.hero-cta{display:flex;gap:1rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.75rem;border-radius:8px;font-size:.82rem;font-family:'DM Mono',monospace;letter-spacing:.06em;text-decoration:none;cursor:pointer;transition:var(--transition);border:none}
+.btn-primary{background:var(--accent);color:var(--bg);font-weight:500}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,169,110,.25)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+.hero-bg-text{position:absolute;right:-2rem;bottom:-1rem;font-family:'DM Serif Display',serif;font-size:18vw;color:var(--surface);pointer-events:none;line-height:1;user-select:none;opacity:.5;outline:none}
+body.edit-mode .hero-bg-text{pointer-events:auto;cursor:text}
+body.edit-mode .hero-bg-text:hover{opacity:.65}
+body.edit-mode .hero-bg-text:focus{opacity:.7;outline:none}
+.hero-badges{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:2rem}
+.badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .85rem;border-radius:99px;font-size:.72rem;font-family:'DM Mono',monospace;border:1px solid var(--border);color:var(--muted);background:var(--bg2)}
+.badge .dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+
+/* ══════════════════════════════
+   SECTION HEADERS
+══════════════════════════════ */
+.section-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:.75rem}
+.section-title{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,3rem);line-height:1.15;margin-bottom:3rem;color:var(--text)}
+.section-title em{font-style:italic;color:var(--accent)}
+
+/* ══════════════════════════════
+   SKILLS
+══════════════════════════════ */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
+.skill-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;transition:var(--transition);overflow:hidden}
+.skill-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.3)}
+.skill-card h3{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:1rem;word-break:break-word}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem}
+.tag{padding:.3rem .75rem;border-radius:6px;font-size:.76rem;background:var(--surface);color:var(--text);border:1px solid var(--border);font-family:'DM Mono',monospace;transition:var(--transition);word-break:break-word;max-width:100%}
+.tag:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ══════════════════════════════
+   TIMELINE
+══════════════════════════════ */
+.timeline{position:relative;padding-left:1.5rem}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;padding:0 0 2.5rem 2rem}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-.42rem;top:.4rem;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 0 3px var(--border)}
+.tl-date{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted2);letter-spacing:.08em;margin-bottom:.4rem}
+.tl-title{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--text);margin-bottom:.25rem;word-break:break-word}
+.tl-org{font-size:.82rem;color:var(--accent);margin-bottom:.6rem;word-break:break-word}
+.tl-desc{font-size:.88rem;color:var(--muted)}
+.tl-desc li{margin-bottom:.25rem;list-style:none;padding-left:1rem;position:relative;word-break:break-word}
+.tl-desc li::before{content:'—';position:absolute;left:0;color:var(--muted2)}
+
+/* ══════════════════════════════
+   PROJECTS
+══════════════════════════════ */
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem}
+.project-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;display:flex;flex-direction:column;gap:1rem;transition:var(--transition);position:relative;overflow:hidden}
+.project-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,169,110,.04) 0%,transparent 60%);opacity:0;transition:var(--transition)}
+.project-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.project-card:hover::after{opacity:1}
+.project-year{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted2);letter-spacing:.1em}
+.project-name{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--text);word-break:break-word}
+.project-desc{font-size:.85rem;color:var(--muted);flex:1;word-break:break-word}
+.project-stack{display:flex;flex-wrap:wrap;gap:.4rem}
+.stack-tag{padding:.2rem .6rem;border-radius:4px;font-size:.68rem;background:var(--surface);color:var(--accent);font-family:'DM Mono',monospace;border:1px solid var(--border)}
+.project-link{display:inline-flex;align-items:center;gap:.4rem;margin-top:.25rem;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);border-radius:6px;padding:.25rem .7rem;transition:var(--transition);width:fit-content}
+.project-link:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ══════════════════════════════
+   LIFE EVENTS
+══════════════════════════════ */
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem}
+.event-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:var(--transition)}
+.event-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.event-img-placeholder{width:100%;height:180px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;color:var(--muted2);font-size:.75rem;font-family:'DM Mono',monospace;letter-spacing:.08em;border-bottom:1px solid var(--border);cursor:pointer;transition:var(--transition);position:relative;overflow:hidden}
+.event-img-placeholder svg{width:32px;height:32px;opacity:.4}
+.event-img-placeholder .upload-hint{color:var(--accent);opacity:0;transition:var(--transition);font-size:.7rem}
+.event-card:hover .upload-hint{opacity:1}
+.event-img-placeholder input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.event-body{padding:1.25rem}
+.event-date{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--accent);letter-spacing:.1em;margin-bottom:.4rem;word-break:break-word}
+.event-title{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);margin-bottom:.4rem;word-break:break-word}
+.event-desc{font-size:.82rem;color:var(--muted);word-break:break-word}
+
+/* ══════════════════════════════
+   LIGHTBOX
+══════════════════════════════ */
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:8000;align-items:center;justify-content:center;padding:2rem}
+#lightbox.open{display:flex}
+#lightbox img{max-width:90vw;max-height:80vh;border-radius:var(--radius);box-shadow:0 32px 80px rgba(0,0,0,.8)}
+#lightbox-close{position:absolute;top:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.2rem;transition:var(--transition)}
+#lightbox-close:hover{background:var(--accent);color:var(--bg)}
+
+/* ══════════════════════════════
+   LANGUAGES
+══════════════════════════════ */
+.lang-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.lang-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;transition:var(--transition)}
+.lang-card:hover{border-color:var(--accent)}
+.lang-name{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:.25rem}
+.lang-level{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--accent)}
+.lang-bar{margin-top:.75rem;height:3px;background:var(--border);border-radius:99px;overflow:hidden}
+.lang-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px}
+
+/* ══════════════════════════════
+   CONTACT
+══════════════════════════════ */
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.contact-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;display:flex;align-items:center;gap:1rem;text-decoration:none;color:var(--text);transition:var(--transition)}
+.contact-card:hover{border-color:var(--accent);transform:translateY(-3px)}
+.contact-icon{width:40px;height:40px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
+.contact-card>div{min-width:0}
+.contact-label{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted2);letter-spacing:.1em;margin-bottom:.25rem}
+.contact-value{font-size:clamp(.7rem,.9vw + .5rem,.85rem);color:var(--text);word-break:break-word;overflow-wrap:break-word}
+
+/* ══════════════════════════════
+   FOOTER
+══════════════════════════════ */
+footer{padding:2rem 5rem;margin-left:220px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted2);transition:margin var(--transition)}
+
+/* ══════════════════════════════
+   MOBILE
+══════════════════════════════ */
+#nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99}
+@media(max-width:900px){
+  nav{transform:translateX(-100%)}
+  nav.open{transform:translateX(0);box-shadow:20px 0 60px rgba(0,0,0,.5)}
+  main{margin-left:0}
+  footer{margin-left:0}
+  section{padding:5rem 1.75rem}
+  #hero{padding:6rem 1.75rem 4rem}
+  #hamburger{display:flex}
+  #nav-overlay.open{display:block}
+  #lang-toggle{top:1.25rem;right:5rem}
+  .hero-bg-text{font-size:28vw;right:-1rem}
+  body.panel-open main,body.panel-open footer{margin-right:0}
+  #editor-panel{width:100%;max-width:100%}
+  #edit-toggle{bottom:1.5rem;right:1.5rem}
+}
+@media(max-width:600px){
+  section{padding:4rem 1.25rem}
+  #hero{padding:5rem 1.25rem 3rem}
+  footer{padding:1.5rem 1.25rem;flex-direction:column;gap:.5rem;text-align:center}
+  .skills-grid,.projects-grid,.events-grid,.lang-grid,.contact-grid{grid-template-columns:1fr}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero-eyebrow{animation:fadeUp .6s ease .1s both}
+.hero-name{animation:fadeUp .6s ease .2s both}
+.hero-title{animation:fadeUp .6s ease .3s both}
+.hero-desc{animation:fadeUp .6s ease .4s both}
+.hero-cta{animation:fadeUp .6s ease .5s both}
+.hero-badges{animation:fadeUp .6s ease .6s both}
+</style>
+</head>
+<body>
+
+<!-- LANG TOGGLE -->
+<div id="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" onclick="setLang('fr')">FR</button>
+</div>
+
+<!-- HAMBURGER -->
+<button id="hamburger" onclick="toggleNav()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div id="nav-overlay" onclick="toggleNav()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="nav-logo">FP<span data-en="Portfolio" data-fr="Portfolio">Portfolio</span></div>
+  <div id="nav-links"></div>
+  <div class="nav-socials">
+    <a href="https://linkedin.com" target="_blank" class="nav-social">LinkedIn</a>
+    <a href="https://github.com" target="_blank" class="nav-social">GitHub</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-eyebrow" data-en="Full-Stack Developer · Open to Work · Worldwide" data-fr="Développeur Full-Stack · Disponible · International">Full-Stack Developer · Open to Work · Worldwide</div>
+    <h1 class="hero-name">Alex<br><em>Rivera</em></h1>
+    <p class="hero-title" data-en="Builder &amp; Problem Solver" data-fr="Créateur &amp; Résolveur de Problèmes">Builder &amp; Problem Solver</p>
+    <p class="hero-desc" data-en="Passionate software developer with 3 years of experience crafting web applications and developer tools. I love turning complex problems into elegant, user-friendly solutions." data-fr="Développeur passionné avec 3 ans d'expérience dans la création d'applications web et d'outils pour développeurs. J'aime transformer des problèmes complexes en solutions élégantes.">Passionate software developer with 3 years of experience crafting web applications and developer tools. I love turning complex problems into elegant, user-friendly solutions.</p>
+    <div class="hero-cta">
+      <a href="#projects" class="btn btn-primary" data-en="View Projects" data-fr="Voir les projets">View Projects</a>
+      <a href="#contact" class="btn btn-ghost" data-en="Get in touch" data-fr="Me contacter">Get in touch</a>
+    </div>
+    <div class="hero-badges">
+      <span class="badge"><span class="dot"></span><span data-en="Available for hire" data-fr="Disponible">Available for hire</span></span>
+      <span class="badge"><span class="dot"></span>San Francisco, CA</span>
+      <span class="badge"><span class="dot"></span>EN · ES</span>
+    </div>
+    <div class="hero-bg-text" id="hero-bg-text">AR</div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <p class="section-label" data-en="What I work with" data-fr="Mes outils">What I work with</p>
+    <h2 class="section-title" data-en="Skills &amp; <em>Technologies</em>" data-fr="Compétences &amp; <em>Technologies</em>">Skills &amp; <em>Technologies</em></h2>
+    <div class="skills-grid" id="skills-grid"></div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <p class="section-label" data-en="Professional journey" data-fr="Parcours professionnel">Professional journey</p>
+    <h2 class="section-title" data-en="<em>Experience</em>" data-fr="<em>Expérience</em>"><em>Experience</em></h2>
+    <div class="timeline" id="experience-timeline"></div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education">
+    <p class="section-label" data-en="Academic background" data-fr="Parcours académique">Academic background</p>
+    <h2 class="section-title" data-en="<em>Education</em>" data-fr="<em>Formation</em>"><em>Education</em></h2>
+    <div class="timeline" id="education-timeline"></div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <p class="section-label" data-en="What I've built" data-fr="Ce que j'ai construit">What I've built</p>
+    <h2 class="section-title" data-en="<em>Projects</em>" data-fr="<em>Projets</em>"><em>Projects</em></h2>
+    <div class="projects-grid" id="projects-grid"></div>
+  </section>
+
+  <!-- LIFE EVENTS -->
+  <section id="life">
+    <p class="section-label" data-en="Beyond code" data-fr="Au-delà du code">Beyond code</p>
+    <h2 class="section-title" data-en="Life <em>Events</em>" data-fr="Moments <em>Clés</em>">Life <em>Events</em></h2>
+    <div class="events-grid" id="events-grid"></div>
+  </section>
+
+  <!-- LANGUAGES -->
+  <section id="languages">
+    <p class="section-label" data-en="Communication" data-fr="Communication">Communication</p>
+    <h2 class="section-title" data-en="<em>Languages</em>" data-fr="<em>Langues</em>"><em>Languages</em></h2>
+    <div class="lang-grid" id="lang-grid"></div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <p class="section-label" data-en="Let's connect" data-fr="Prenons contact">Let's connect</p>
+    <h2 class="section-title" data-en="Get in <em>Touch</em>" data-fr="Me <em>Contacter</em>">Get in <em>Touch</em></h2>
+    <div class="contact-grid" id="contact-grid"></div>
+  </section>
+</main>
+
+<footer>
+  <span>© 2025 Alex Rivera</span>
+  <span data-en="Built with Flash Portfolio ⚡" data-fr="Créé avec Flash Portfolio ⚡">Built with Flash Portfolio ⚡</span>
+</footer>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="Event photo"/>
+</div>
+
+<!-- EDITOR TOGGLE -->
+<button id="edit-toggle" onclick="toggleEditor()" title="Open Customizer">✏️</button>
+
+<!-- EDITOR PANEL -->
+<div id="editor-panel">
+  <div class="ep-header">
+    <span class="ep-title">✦ Customizer</span>
+    <button class="ep-close" onclick="toggleEditor()">✕</button>
+  </div>
+  <div class="ep-tabs">
+    <button class="ep-tab active" onclick="switchTab('theme')">Theme</button>
+    <button class="ep-tab" onclick="switchTab('sections')">Sections</button>
+    <button class="ep-tab" onclick="switchTab('content')">Content</button>
+    <button class="ep-tab" onclick="switchTab('export')">Export</button>
+  </div>
+
+  <!-- TAB: THEME -->
+  <div class="ep-body" id="tab-theme">
+    <div class="ep-section-title">Presets</div>
+    <div class="theme-presets" id="theme-presets"></div>
+
+    <div class="ep-section-title">Colors</div>
+    <div class="ep-row"><label>Background</label><input type="color" id="c-bg" oninput="applyColor('--bg',this.value)"/></div>
+    <div class="ep-row"><label>Surface</label><input type="color" id="c-surface" oninput="applyColor('--surface',this.value)"/></div>
+    <div class="ep-row"><label>Accent</label><input type="color" id="c-accent" oninput="applyColor('--accent',this.value)"/></div>
+    <div class="ep-row"><label>Text</label><input type="color" id="c-text" oninput="applyColor('--text',this.value)"/></div>
+    <div class="ep-row"><label>Muted</label><input type="color" id="c-muted" oninput="applyColor('--muted',this.value)"/></div>
+    <div class="ep-row"><label>Border</label><input type="color" id="c-border" oninput="applyColor('--border',this.value)"/></div>
+
+    <div class="ep-section-title">Typography</div>
+    <div class="ep-row">
+      <label>Body font</label>
+      <select onchange="applyFont('body',this.value)">
+        <option value="'Outfit',sans-serif" selected>Outfit</option>
+        <option value="'Inter',sans-serif">Inter</option>
+        <option value="'Fira Code',monospace">Fira Code</option>
+        <option value="Georgia,serif">Georgia</option>
+      </select>
+    </div>
+    <div class="ep-row">
+      <label>Corner radius</label>
+      <input type="number" min="0" max="24" value="12" oninput="applyVar('--radius',this.value+'px')"/>
+    </div>
+
+    <div class="ep-section-title">Inline Text Edit</div>
+    <button class="ep-btn" id="editmode-btn" onclick="toggleEditMode()">🖊 Enable Click-to-Edit</button>
+    <p style="font-size:.72rem;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.5">When enabled, click any text on the page to edit it directly.</p>
+  </div>
+
+  <!-- TAB: SECTIONS -->
+  <div class="ep-body" id="tab-sections" style="display:none">
+    <div class="ep-section-title">Visibility &amp; Order</div>
+    <p style="font-size:.72rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:.75rem;line-height:1.5">Drag to reorder · Toggle to show/hide</p>
+    <div class="section-list" id="section-list"></div>
+  </div>
+
+  <!-- TAB: CONTENT -->
+  <div class="ep-body" id="tab-content" style="display:none">
+    <div class="ep-section-title">Skills</div>
+    <div class="item-list" id="skill-list"></div>
+    <button class="ep-btn primary" onclick="openSkillModal()">+ Add Skill Group</button>
+
+    <div class="ep-section-title">Experience</div>
+    <div class="item-list" id="experience-list"></div>
+    <button class="ep-btn primary" onclick="openTimelineModal('experience')">+ Add Experience</button>
+
+    <div class="ep-section-title">Education</div>
+    <div class="item-list" id="education-list"></div>
+    <button class="ep-btn primary" onclick="openTimelineModal('education')">+ Add Education</button>
+
+    <div class="ep-section-title">Projects</div>
+    <div class="item-list" id="project-list"></div>
+    <button class="ep-btn primary" onclick="openProjectModal()">+ Add Project</button>
+
+    <div class="ep-section-title">Life Events</div>
+    <div class="item-list" id="event-list"></div>
+    <button class="ep-btn primary" onclick="openEventModal()">+ Add Event</button>
+
+    <div class="ep-section-title">Languages</div>
+    <div class="item-list" id="lang-list"></div>
+    <button class="ep-btn primary" onclick="openLangModal()">+ Add Language</button>
+
+    <div class="ep-section-title">Contact</div>
+    <div class="item-list" id="contact-list"></div>
+    <button class="ep-btn primary" onclick="openContactModal()">+ Add Contact</button>
+  </div>
+
+  <!-- TAB: EXPORT -->
+  <div class="ep-body" id="tab-export" style="display:none">
+    <div class="ep-section-title">Import</div>
+    <p style="font-size:.72rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:.75rem;line-height:1.6">Load any portfolio previously exported by this tool to continue editing it.</p>
+    <button class="ep-btn" onclick="document.getElementById('import-file').click()">⬆ Import HTML file</button>
+    <input type="file" id="import-file" accept=".html" style="display:none" onchange="importHTML(event)"/>
+
+    <div class="ep-section-title">Save &amp; Export</div>
+    <p style="font-size:.72rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:1rem;line-height:1.6">Download your customized portfolio as a self-contained HTML file ready to deploy anywhere.</p>
+    <button class="ep-btn primary" onclick="exportHTML()">⬇ Download HTML</button>
+    <button class="ep-btn" onclick="exportResumePDF()">📄 Export Resume as PDF</button>
+    <button class="ep-btn" onclick="copyShareLink()">🔗 Copy page URL</button>
+
+    <div class="ep-section-title">Reset</div>
+    <button class="ep-btn" style="color:#e74c3c;border-color:#e74c3c" onclick="resetAll()">↺ Reset all customizations</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-box">
+    <h3 id="modal-title">Add Project</h3>
+    <div id="modal-fields"></div>
+    <div class="modal-actions">
+      <button class="ep-btn primary" onclick="submitModal()">Save</button>
+      <button class="ep-btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════ */
+let currentLang = 'en';
+
+const skillsData = [
+  {category:{en:'Languages',fr:'Langages'},tags:['JavaScript','TypeScript','Python','Go','Rust']},
+  {category:{en:'Frontend',fr:'Frontend'},tags:['React','Next.js','Vue','Tailwind CSS','Framer Motion']},
+  {category:{en:'Backend',fr:'Backend'},tags:['Node.js','Express','FastAPI','PostgreSQL','Redis']},
+  {category:{en:'DevOps & Cloud',fr:'DevOps & Cloud'},tags:['Docker','Kubernetes','AWS','GitHub Actions','Terraform']},
+  {category:{en:'Tools',fr:'Outils'},tags:['Git','Figma','VS Code','Postman','Linear']},
+  {category:{en:'Soft Skills',fr:'Savoir-être'},tags:['Team Leadership','Agile','Code Review','Mentoring','Communication']}
+];
+
+const experienceData = [
+  {date:{en:'Jan 2023 – Present',fr:'Jan 2023 – Présent'},title:{en:'Senior Frontend Developer',fr:'Développeur Frontend Senior'},org:'Acme Corp, San Francisco',bullets:{en:['Led migration of legacy codebase to Next.js 14, reducing load time by 60%.','Mentored a team of 4 junior developers through weekly code reviews.','Shipped 3 major product features used by 200k+ monthly active users.'],fr:['Dirigé la migration du code legacy vers Next.js 14, réduisant le temps de chargement de 60%.','Encadré une équipe de 4 développeurs juniors lors de revues de code hebdomadaires.','Livré 3 fonctionnalités majeures utilisées par plus de 200k utilisateurs actifs.']}},
+  {date:{en:'Jun 2021 – Dec 2022',fr:'Juin 2021 – Déc 2022'},title:{en:'Full-Stack Developer',fr:'Développeur Full-Stack'},org:'StartupXYZ, Remote',bullets:{en:['Built a real-time collaboration tool from scratch using React and WebSockets.','Designed and implemented REST & GraphQL APIs serving 50k daily requests.','Reduced AWS infrastructure costs by 35% through caching and query optimization.'],fr:['Construit un outil de collaboration en temps réel avec React et WebSockets.','Conçu et implémenté des APIs REST & GraphQL traitant 50k requêtes/jour.','Réduit les coûts AWS de 35% via le caching et l\'optimisation des requêtes.']}},
+  {date:{en:'Sep 2020 – May 2021',fr:'Sep 2020 – Mai 2021'},title:{en:'Software Engineering Intern',fr:'Stagiaire Ingénieur Logiciel'},org:'Tech Agency, New York',bullets:{en:['Developed and maintained client-facing dashboards in React and D3.js.','Wrote unit and integration tests achieving 85% code coverage.'],fr:['Développé et maintenu des tableaux de bord clients en React et D3.js.','Écrit des tests unitaires et d\'intégration avec 85% de couverture.']}}
+];
+
+const educationData = [
+  {date:{en:'Sep 2017 – May 2021',fr:'Sep 2017 – Mai 2021'},title:{en:'B.Sc. Computer Science',fr:'Licence en Informatique'},org:'State University, California',bullets:{en:['Graduated with Honours, GPA 3.9/4.0.','Specialisation in Distributed Systems and Human-Computer Interaction.'],fr:['Diplômé avec mention, GPA 3.9/4.0.','Spécialisation en Systèmes Distribués et Interaction Homme-Machine.']}},
+  {date:{en:'Summer 2019',fr:'Été 2019'},title:{en:'Open Source Contributor — GSoC',fr:'Contributeur Open Source — GSoC'},org:'Google Summer of Code',bullets:{en:['Contributed new features to a popular open-source charting library (2k+ GitHub stars).'],fr:['Contribué de nouvelles fonctionnalités à une bibliothèque de graphiques open-source (2k+ étoiles GitHub).']}}
+];
+
+const projectsData = [
+  {year:'2024',name:{en:'DevFlow',fr:'DevFlow'},desc:{en:'A developer productivity dashboard that aggregates GitHub, Jira, and Slack activity into one clean view.',fr:'Tableau de bord de productivité qui agrège GitHub, Jira et Slack en une vue unifiée.'},stack:['Next.js','TypeScript','Prisma','PostgreSQL'],link:'https://github.com'},
+  {year:'2024',name:{en:'Inkdrop UI',fr:'Inkdrop UI'},desc:{en:'Open-source React component library with 40+ accessible, themeable components. 800+ GitHub stars.',fr:'Bibliothèque de composants React open-source avec 40+ composants accessibles et thémables.'},stack:['React','Storybook','Radix UI','Tailwind'],link:'https://github.com'},
+  {year:'2023',name:{en:'Pocketlang',fr:'Pocketlang'},desc:{en:'A tiny interpreted scripting language written in Go, with a REPL and basic standard library.',fr:'Petit langage de script interprété écrit en Go, avec un REPL et une bibliothèque standard.'},stack:['Go'],link:'https://github.com'},
+  {year:'2023',name:{en:'Routewise',fr:'Routewise'},desc:{en:'AI-powered travel itinerary planner that generates day-by-day schedules from a simple prompt.',fr:'Planificateur d\'itinéraires de voyage alimenté par IA qui génère des programmes jour par jour.'},stack:['Python','FastAPI','OpenAI','React'],link:null},
+  {year:'2022',name:{en:'Snapvault',fr:'Snapvault'},desc:{en:'End-to-end encrypted photo backup web app. Files are encrypted client-side before upload.',fr:'Application web de sauvegarde de photos chiffrée de bout en bout. Fichiers chiffrés côté client.'},stack:['Vue','Node.js','AWS S3','WebCrypto'],link:null},
+  {year:'2021',name:{en:'Termify',fr:'Termify'},desc:{en:'A terminal-based Spotify client built with Python and the Spotify Web API. 300+ GitHub stars.',fr:'Client Spotify en terminal construit avec Python et l\'API Web Spotify. 300+ étoiles GitHub.'},stack:['Python','Curses','Spotify API'],link:'https://github.com'}
+];
+
+const eventsData = [
+  {date:{en:'May 2021',fr:'Mai 2021'},title:{en:'Graduated with Honours',fr:'Diplômé avec Mention'},desc:{en:'Received B.Sc. in Computer Science with a 3.9 GPA and the Dean\'s Award for academic excellence.',fr:'Obtenu une Licence en Informatique avec un GPA de 3.9 et le Prix du Doyen pour l\'excellence académique.'},icon:'🎓',img:null},
+  {date:{en:'Summer 2019',fr:'Été 2019'},title:{en:'Google Summer of Code',fr:'Google Summer of Code'},desc:{en:'Selected out of 5,000+ applicants to contribute to open source full-time for 3 months.',fr:'Sélectionné parmi 5000+ candidats pour contribuer à l\'open source à temps plein pendant 3 mois.'},icon:'🌍',img:null},
+  {date:{en:'Jan 2023',fr:'Jan 2023'},title:{en:'Joined Acme Corp',fr:'Rejoint Acme Corp'},desc:{en:'Promoted directly to Senior Developer after impressing in the technical interview loop.',fr:'Promu directement Développeur Senior après avoir impressionné lors du processus d\'entretiens techniques.'},icon:'🚀',img:null},
+  {date:{en:'Oct 2023',fr:'Oct 2023'},title:{en:'Inkdrop UI hits 800 stars',fr:'Inkdrop UI atteint 800 étoiles'},desc:{en:'My open-source component library was featured on the React Newsletter and Hacker News front page.',fr:'Ma bibliothèque de composants open-source a été présentée dans React Newsletter et sur Hacker News.'},icon:'⭐',img:null},
+  {date:{en:'Mar 2024',fr:'Mar 2024'},title:{en:'Speaker at ReactConf',fr:'Intervenant à ReactConf'},desc:{en:'Gave a 30-min talk on "Building Accessible Component Libraries at Scale" to an audience of 800.',fr:'Donné une conférence de 30 minutes sur la création de bibliothèques de composants accessibles devant 800 personnes.'},icon:'🎤',img:null}
+];
+
+const languagesData = [
+  {name:{en:'English',fr:'Anglais'},level:'C2 — Native',pct:100},
+  {name:{en:'Spanish',fr:'Espagnol'},level:'B2 — Upper Intermediate',pct:72},
+  {name:{en:'French',fr:'Français'},level:'A2 — Elementary',pct:28}
+];
+
+const contactData = [
+  {icon:'✉️',label:'EMAIL',value:'alex.rivera@example.com',href:'mailto:alex.rivera@example.com'},
+  {icon:'🔗',label:'LINKEDIN',value:'linkedin.com/in/alexrivera',href:'https://linkedin.com'},
+  {icon:'⌨️',label:'GITHUB',value:'github.com/alexrivera',href:'https://github.com'},
+  {icon:'🌐',label:'WEBSITE',value:'alexrivera.dev',href:'https://example.com'}
+];
+
+const sectionsOrder = [
+  {id:'hero',label:'Home / Hero',visible:true},
+  {id:'skills',label:'Skills',visible:true},
+  {id:'experience',label:'Experience',visible:true},
+  {id:'education',label:'Education',visible:true},
+  {id:'projects',label:'Projects',visible:true},
+  {id:'life',label:'Life Events',visible:true},
+  {id:'languages',label:'Languages',visible:true},
+  {id:'contact',label:'Contact',visible:true}
+];
+
+const themes = [
+  {name:'Gold Dark',bg:'#0b0c0f',bg2:'#111318',surface:'#1e2128',border:'#2a2d36',accent:'#c9a96e',text:'#e8e6e1',muted:'#7a7d8a'},
+  {name:'Ocean',bg:'#060d1a',bg2:'#0b1628',surface:'#112040',border:'#1a3055',accent:'#4da6ff',text:'#dce8f5',muted:'#6a8fb0'},
+  {name:'Forest',bg:'#080e0a',bg2:'#0e1a10',surface:'#172317',border:'#243524',accent:'#6bcf7f',text:'#d4ebd8',muted:'#6a8f6d'},
+  {name:'Rose',bg:'#120a0c',bg2:'#1e1012',surface:'#2a1418',border:'#3d1e22',accent:'#e87a8a',text:'#f0dde0',muted:'#9e7077'},
+  {name:'Slate',bg:'#0a0c10',bg2:'#12141a',surface:'#1c2030',border:'#2a3045',accent:'#a78bfa',text:'#e2e4f0',muted:'#7a7f99'},
+  {name:'Amber',bg:'#0f0a00',bg2:'#1a1200',surface:'#261b00',border:'#3d2e00',accent:'#f59e0b',text:'#fef3c7',muted:'#9e8050'},
+  {name:'Minimal',bg:'#ffffff',bg2:'#f5f5f5',surface:'#ebebeb',border:'#d8d8d8',accent:'#1a1a1a',text:'#1a1a1a',muted:'#777777'},
+  {name:'Cyber',bg:'#00040f',bg2:'#000c1a',surface:'#001429',border:'#002040',accent:'#00ffcc',text:'#ccffee',muted:'#339977'}
+];
+
+/* ═══════════════════════════════════════════
+   LANGUAGE
+═══════════════════════════════════════════ */
+function setLang(lang){
+  currentLang=lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
+  document.querySelectorAll('[data-'+lang+']').forEach(el=>{
+    const v=el.getAttribute('data-'+lang);
+    if(v) el.innerHTML=v;
+  });
+  document.documentElement.lang=lang;
+  renderSkills();
+  renderTimeline('experience',experienceData);
+  renderTimeline('education',educationData);
+  renderProjects();
+  renderEvents();
+  renderLanguages();
+  renderContact();
+  renderContentList();
+}
+
+function t(obj){ return typeof obj==='string'?obj:(obj[currentLang]||obj.en||''); }
+
+/* ═══════════════════════════════════════════
+   RENDER SKILLS
+═══════════════════════════════════════════ */
+function renderSkills(){
+  const g=document.getElementById('skills-grid');
+  g.innerHTML='';
+  skillsData.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.className='skill-card';
+    card.innerHTML=`
+      <h3>${t(s.category)}</h3>
+      <div class="tags">${s.tags.map(tag=>`<span class="tag">${tag}</span>`).join('')}</div>`;
+    g.appendChild(card);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER TIMELINE (experience / education)
+═══════════════════════════════════════════ */
+function renderTimeline(type, data){
+  const el=document.getElementById(type+'-timeline');
+  if(!el) return;
+  el.innerHTML='';
+  data.forEach((item,i)=>{
+    const bullets=(item.bullets[currentLang]||item.bullets.en||[]).map(b=>`<li>${b}</li>`).join('');
+    const div=document.createElement('div');
+    div.className='tl-item';
+    div.innerHTML=`
+      <div class="tl-dot"></div>
+      <div class="tl-date">${t(item.date)}</div>
+      <div class="tl-title">${t(item.title)}</div>
+      <div class="tl-org">${item.org}</div>
+      <ul class="tl-desc">${bullets}</ul>`;
+    el.appendChild(div);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER PROJECTS
+═══════════════════════════════════════════ */
+function renderProjects(){
+  const g=document.getElementById('projects-grid');
+  g.innerHTML='';
+  projectsData.forEach((p,i)=>{
+    const el=document.createElement('div');
+    el.className='project-card';
+    const linkHtml=p.link?`<a href="${esc(p.link)}" target="_blank" rel="noopener" class="project-link">↗ ${currentLang==='fr'?'Voir le projet':'View project'}</a>`:'';
+    el.innerHTML=`
+      <div class="project-year">${p.year}</div>
+      <div class="project-name">${t(p.name)}</div>
+      <div class="project-desc">${t(p.desc)}</div>
+      <div class="project-stack">${p.stack.map(s=>`<span class="stack-tag">${s}</span>`).join('')}</div>
+      ${linkHtml}`;
+    g.appendChild(el);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER EVENTS
+═══════════════════════════════════════════ */
+function renderEvents(){
+  const g=document.getElementById('events-grid');
+  g.innerHTML='';
+  eventsData.forEach((ev,i)=>{
+    const card=document.createElement('div');
+    card.className='event-card';
+    const imgHtml=ev.img
+      ?`<img src="${ev.img}" alt="${t(ev.title)}" style="width:100%;height:180px;object-fit:cover;display:block;cursor:pointer" onclick="openLightbox('${ev.img}')"/>`
+      :`<div class="event-img-placeholder">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>${ev.icon}</span>
+          <span class="upload-hint">${currentLang==='en'?'+ Upload photo':'+ Ajouter photo'}</span>
+          <input type="file" accept="image/*" onchange="handleImg(event,${i})"/>
+        </div>`;
+    card.innerHTML=`${imgHtml}<div class="event-body"><div class="event-date">${t(ev.date)}</div><div class="event-title">${t(ev.title)}</div><div class="event-desc">${t(ev.desc)}</div></div>`;
+    g.appendChild(card);
+  });
+}
+
+function handleImg(e,idx){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{eventsData[idx].img=ev.target.result;renderEvents();showToast('📸 Photo added!')};
+  r.readAsDataURL(f);
+}
+
+/* ═══════════════════════════════════════════
+   RENDER LANGUAGES
+═══════════════════════════════════════════ */
+function renderLanguages(){
+  const g=document.getElementById('lang-grid');
+  if(!g)return;
+  g.innerHTML='';
+  languagesData.forEach(l=>{
+    const card=document.createElement('div');
+    card.className='lang-card';
+    card.innerHTML=`
+      <div class="lang-name">${t(l.name)}</div>
+      <div class="lang-level">${l.level}</div>
+      <div class="lang-bar"><div class="lang-bar-fill" style="width:${l.pct}%"></div></div>`;
+    g.appendChild(card);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER CONTACT
+═══════════════════════════════════════════ */
+function renderContact(){
+  const g=document.getElementById('contact-grid');
+  if(!g)return;
+  g.innerHTML='';
+  contactData.forEach(c=>{
+    const a=document.createElement('a');
+    a.className='contact-card';
+    a.href=c.href;
+    if(!c.href.startsWith('mailto'))a.target='_blank';
+    a.innerHTML=`<div class="contact-icon">${c.icon}</div><div><div class="contact-label">${c.label}</div><div class="contact-value">${c.value}</div></div>`;
+    g.appendChild(a);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════ */
+function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('open')}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open')}
+document.getElementById('lightbox').addEventListener('click',function(e){if(e.target===this)closeLightbox()});
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+function toggleNav(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('nav-overlay').classList.toggle('open')}
+function closeNav(){document.getElementById('sidebar').classList.remove('open');document.getElementById('nav-overlay').classList.remove('open')}
+
+/* ═══════════════════════════════════════════
+   SCROLL SPY & REVEAL
+═══════════════════════════════════════════ */
+const navLinks=document.querySelectorAll('.nav-link');
+const scrollObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)navLinks.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id))});
+},{threshold:.3});
+const revealObserver=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+},{threshold:.08});
+document.querySelectorAll('section[id]').forEach(s=>{scrollObserver.observe(s);if(s.id!=='hero')revealObserver.observe(s)});
+
+/* ═══════════════════════════════════════════
+   EDITOR PANEL
+═══════════════════════════════════════════ */
+let editorOpen=false;
+function toggleEditor(){
+  editorOpen=!editorOpen;
+  document.getElementById('editor-panel').classList.toggle('open',editorOpen);
+  document.body.classList.toggle('panel-open',editorOpen);
+  const btn=document.getElementById('edit-toggle');
+  btn.textContent=editorOpen?'✕':'✏️';
+  btn.classList.toggle('active',editorOpen);
+}
+
+function switchTab(name){
+  ['theme','sections','content','export'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===name?'block':'none';
+    document.querySelectorAll('.ep-tab').forEach((b,i)=>b.classList.toggle('active',['theme','sections','content','export'][i]===name));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   THEME ENGINE
+═══════════════════════════════════════════ */
+function applyColor(varName,val){
+  document.documentElement.style.setProperty(varName,val);
+  if(varName==='--bg'){document.documentElement.style.setProperty('--bg2',lighten(val,8));document.documentElement.style.setProperty('--bg3',lighten(val,14))}
+}
+function applyVar(v,val){document.documentElement.style.setProperty(v,val)}
+function applyFont(t,val){document.body.style.fontFamily=val}
+function lighten(hex,pct){
+  let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  r=Math.min(255,r+pct);g=Math.min(255,g+pct);b=Math.min(255,b+pct);
+  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function applyTheme(t){
+  const map={bg:'--bg',surface:'--surface',border:'--border',accent:'--accent',text:'--text',muted:'--muted'};
+  Object.entries(map).forEach(([k,v])=>document.documentElement.style.setProperty(v,t[k]));
+  document.documentElement.style.setProperty('--bg2',t.bg2);
+  document.documentElement.style.setProperty('--accent2',lighten(t.accent,20));
+  syncColorPickers(t);
+  showToast('🎨 Theme applied: '+t.name);
+}
+function syncColorPickers(t){
+  const fields={bg:'#c-bg',surface:'#c-surface',accent:'#c-accent',text:'#c-text',muted:'#c-muted',border:'#c-border'};
+  Object.entries(fields).forEach(([k,sel])=>{const el=document.querySelector(sel);if(el&&t[k])el.value=t[k]});
+}
+function buildThemePresets(){
+  const c=document.getElementById('theme-presets');
+  themes.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='preset-btn';
+    b.innerHTML=`<div class="preset-swatch" style="background:linear-gradient(90deg,${t.bg} 40%,${t.accent} 40%)"></div>${t.name}`;
+    b.onclick=()=>applyTheme(t);
+    c.appendChild(b);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   EDIT MODE
+═══════════════════════════════════════════ */
+let editModeOn=false;
+function toggleEditMode(){
+  editModeOn=!editModeOn;
+  const btn=document.getElementById('editmode-btn');
+  if(editModeOn){
+    document.body.classList.add('edit-mode');
+    const editSelector=[
+      'main h1','main h2','main h3','main h4','main p','main li',
+      '.tl-title','.tl-org','.tl-date','.tl-desc li',
+      '.hero-eyebrow','.hero-title','.hero-desc','.hero-name em','.badge span',
+      '.section-label','.tag','.skill-card h3',
+      '.project-name','.project-desc','.project-year','.stack-tag',
+      '.event-title','.event-desc','.event-date',
+      '.lang-name','.lang-level',
+      '.contact-value','.contact-label','footer span',
+      '#hero-bg-text'
+    ].join(',');
+    document.querySelectorAll(editSelector).forEach(el=>{
+      if(!el.closest('#editor-panel')&&!el.closest('#modal-overlay')&&!el.closest('nav')){
+        el.contentEditable='true';el.spellcheck=false;
+      }
+    });
+    btn.textContent='✓ Click-to-Edit ON — click text to edit';
+    btn.style.background='var(--accent)';btn.style.color='var(--bg)';
+    showToast('✏️ Edit mode on — click any text to edit');
+  } else {
+    document.body.classList.remove('edit-mode');
+    document.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
+    btn.textContent='🖊 Enable Click-to-Edit';
+    btn.style.background='';btn.style.color='';
+    showToast('✓ Changes saved to view');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SECTIONS MANAGER
+═══════════════════════════════════════════ */
+function rebuildNav(){
+  const container=document.getElementById('nav-links');
+  if(!container)return;
+  container.innerHTML='';
+  sectionsOrder.forEach(sec=>{
+    if(!sec.visible||sec.id==='hero'&&false){}// always show all
+    const a=document.createElement('a');
+    a.href='#'+sec.id;
+    a.className='nav-link';
+    a.onclick=closeNav;
+    a.innerHTML=`<span class="dot"></span><span>${sec.label}</span>`;
+    container.appendChild(a);
+  });
+  // Re-attach scroll spy to new links
+  const newLinks=container.querySelectorAll('.nav-link');
+  scrollObserver.disconnect();
+  const allNavLinks=[...document.querySelectorAll('#nav-links .nav-link')];
+  const newScrollObs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting) allNavLinks.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));
+    });
+  },{threshold:.3});
+  document.querySelectorAll('section[id]').forEach(s=>newScrollObs.observe(s));
+}
+
+let dragSrc=null;
+function buildSectionList(){
+  const list=document.getElementById('section-list');
+  list.innerHTML='';
+  sectionsOrder.forEach((sec,i)=>{
+    const row=document.createElement('div');
+    row.className='section-row';row.draggable=true;row.dataset.id=sec.id;
+    row.innerHTML=`
+      <span class="drag-handle">⠿</span>
+      <span class="section-row-name" contenteditable="true" spellcheck="false" onblur="renameSectionLabel('${sec.id}',this.textContent.trim())" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${sec.label}</span>
+      <button class="item-btn" title="Clone section" onclick="cloneSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">⧉</button>
+      <button class="item-btn danger" title="Delete section" onclick="deleteSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">✕</button>
+      <label class="toggle-switch">
+        <input type="checkbox" ${sec.visible?'checked':''} onchange="toggleSection('${sec.id}',this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>`;
+    row.addEventListener('dragstart',e=>{dragSrc=i;row.classList.add('dragging');e.dataTransfer.effectAllowed='move'});
+    row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+    row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over')});
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',e=>{
+      e.preventDefault();row.classList.remove('drag-over');
+      if(dragSrc===null||dragSrc===i)return;
+      const moved=sectionsOrder.splice(dragSrc,1)[0];
+      sectionsOrder.splice(i,0,moved);
+      reorderDOMSections();buildSectionList();
+      showToast('↕ Section reordered');
+    });
+    list.appendChild(row);
+  });
+  rebuildNav();
+}
+function toggleSection(id,visible){
+  const sec=sectionsOrder.find(s=>s.id===id);if(sec)sec.visible=visible;
+  const el=document.getElementById(id);if(el)el.dataset.hidden=!visible;
+  showToast(visible?'👁 Section visible':'🙈 Section hidden');
+}
+function renameSectionLabel(id,newLabel){
+  if(!newLabel)return;
+  const sec=sectionsOrder.find(s=>s.id===id);
+  if(sec)sec.label=newLabel;
+  rebuildNav();
+  showToast('✏️ Section renamed');
+}
+function reorderDOMSections(){
+  const main=document.querySelector('main');
+  sectionsOrder.forEach(sec=>{const el=document.getElementById(sec.id);if(el)main.appendChild(el)});
+}
+function cloneSection(id){
+  const original=document.getElementById(id);
+  if(!original)return;
+  // Generate unique id
+  const newId=id+'-clone-'+Date.now();
+  const clone=original.cloneNode(true);
+  clone.id=newId;
+  // Remove scroll observer classes so reveal animation works fresh
+  clone.classList.remove('visible');
+  // Insert right after original in DOM
+  original.after(clone);
+  // Re-attach reveal observer
+  revealObserver.observe(clone);
+  scrollObserver.observe(clone);
+  // Find position of original in sectionsOrder and insert after it
+  const idx=sectionsOrder.findIndex(s=>s.id===id);
+  const origEntry=sectionsOrder[idx];
+  sectionsOrder.splice(idx+1,0,{id:newId,label:origEntry.label+' (copy)',visible:origEntry.visible});
+  buildSectionList();
+  rebuildNav();
+  showToast('⧉ Section cloned');
+}
+function deleteSection(id){
+  const coreIds=['hero','skills','experience','education','projects','life','languages','contact'];
+  if(coreIds.includes(id)&&!id.includes('-clone-')){
+    if(!confirm('Delete this core section? You can toggle it off instead.'))return;
+  }
+  const el=document.getElementById(id);
+  if(el)el.remove();
+  const idx=sectionsOrder.findIndex(s=>s.id===id);
+  if(idx>=0)sectionsOrder.splice(idx,1);
+  buildSectionList();
+  rebuildNav();
+  showToast('🗑 Section deleted');
+}
+
+/* ═══════════════════════════════════════════
+   CONTENT LIST RENDERER
+═══════════════════════════════════════════ */
+function renderContentList(){
+  // Skills
+  const sl=document.getElementById('skill-list');
+  sl.innerHTML='';
+  skillsData.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${t(s.category)}</div><div class="item-row-sub">${s.tags.join(', ')}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openSkillModal(${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteSkill(${i})">✕</button></div>`;
+    sl.appendChild(row);
+  });
+  // Experience
+  const exl=document.getElementById('experience-list');
+  exl.innerHTML='';
+  experienceData.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${t(item.title)}</div><div class="item-row-sub">${item.org} · ${t(item.date)}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openTimelineModal('experience',${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteTimeline('experience',${i})">✕</button></div>`;
+    exl.appendChild(row);
+  });
+  // Education
+  const edl=document.getElementById('education-list');
+  edl.innerHTML='';
+  educationData.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${t(item.title)}</div><div class="item-row-sub">${item.org} · ${t(item.date)}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openTimelineModal('education',${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteTimeline('education',${i})">✕</button></div>`;
+    edl.appendChild(row);
+  });
+  // Projects
+  const pl=document.getElementById('project-list');
+  pl.innerHTML='';
+  projectsData.forEach((p,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${t(p.name)}</div><div class="item-row-sub">${p.year} · ${p.stack.join(', ')}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openProjectModal(${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteProject(${i})">✕</button></div>`;
+    pl.appendChild(row);
+  });
+  // Events
+  const evl=document.getElementById('event-list');
+  evl.innerHTML='';
+  eventsData.forEach((ev,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${ev.icon} ${t(ev.title)}</div><div class="item-row-sub">${t(ev.date)}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openEventModal(${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteEvent(${i})">✕</button></div>`;
+    evl.appendChild(row);
+  });
+  // Languages
+  const ll=document.getElementById('lang-list');
+  ll.innerHTML='';
+  languagesData.forEach((l,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${t(l.name)}</div><div class="item-row-sub">${l.level} · ${l.pct}%</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openLangModal(${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteLang(${i})">✕</button></div>`;
+    ll.appendChild(row);
+  });
+  // Contact
+  const cl=document.getElementById('contact-list');
+  cl.innerHTML='';
+  contactData.forEach((c,i)=>{
+    const row=document.createElement('div');row.className='item-row';
+    row.innerHTML=`<div><div class="item-row-label">${c.icon} ${c.label}</div><div class="item-row-sub">${c.value}</div></div>
+      <div class="item-row-btns"><button class="item-btn" onclick="openContactModal(${i})">Edit</button>
+      <button class="item-btn danger" onclick="deleteContact(${i})">✕</button></div>`;
+    cl.appendChild(row);
+  });
+}
+
+function deleteSkill(i){skillsData.splice(i,1);renderSkills();renderContentList();showToast('🗑 Skill group removed')}
+function deleteTimeline(type,i){
+  if(type==='experience')experienceData.splice(i,1);
+  else educationData.splice(i,1);
+  renderTimeline(type,type==='experience'?experienceData:educationData);
+  renderContentList();showToast('🗑 Item removed');
+}
+function deleteProject(i){projectsData.splice(i,1);renderProjects();renderContentList();showToast('🗑 Project removed')}
+function deleteEvent(i){eventsData.splice(i,1);renderEvents();renderContentList();showToast('🗑 Event removed')}
+function deleteLang(i){languagesData.splice(i,1);renderLanguages();renderContentList();showToast('🗑 Language removed')}
+function deleteContact(i){contactData.splice(i,1);renderContact();renderContentList();showToast('🗑 Contact removed')}
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+let modalMode=null;
+
+function esc(s){return String(s).replace(/"/g,'&quot;')}
+
+function openSkillModal(idx=-1){
+  modalMode={type:'skill',index:idx};
+  const s=idx>=0?skillsData[idx]:null;
+  document.getElementById('modal-title').textContent=idx>=0?'Edit Skill Group':'Add Skill Group';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-row">
+      <div class="modal-field"><label>Category (EN)</label><input id="mf-cat-en" value="${s?esc(s.category.en||s.category):''}"/></div>
+      <div class="modal-field"><label>Category (FR)</label><input id="mf-cat-fr" value="${s?esc(s.category.fr||s.category.en||s.category):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Tags (comma-separated)</label><input id="mf-tags" value="${s?esc(s.tags.join(', ')):''}"/></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openTimelineModal(type,idx=-1){
+  modalMode={type,index:idx};
+  const data=type==='experience'?experienceData:educationData;
+  const item=idx>=0?data[idx]:null;
+  const label=type==='experience'?'Experience':'Education';
+  document.getElementById('modal-title').textContent=idx>=0?`Edit ${label}`:`Add ${label}`;
+  const bulletsEn=item?(item.bullets.en||[]).join('\n'):'';
+  const bulletsFr=item?(item.bullets.fr||[]).join('\n'):'';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-row">
+      <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item?esc(item.date.en):''}"/></div>
+      <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item?esc(item.date.fr):''}"/></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item?esc(t(item.title)):''}"/></div>
+      <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item&&item.title.fr?esc(item.title.fr):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Organisation</label><input id="mf-org" value="${item?esc(item.org):''}"/></div>
+    <div class="modal-field"><label>Bullet points EN (one per line)</label><textarea id="mf-bullets-en" rows="4">${bulletsEn}</textarea></div>
+    <div class="modal-field"><label>Bullet points FR (one per line)</label><textarea id="mf-bullets-fr" rows="4">${bulletsFr}</textarea></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openProjectModal(idx=-1){
+  modalMode={type:'project',index:idx};
+  const p=idx>=0?projectsData[idx]:null;
+  document.getElementById('modal-title').textContent=idx>=0?'Edit Project':'Add Project';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-row">
+      <div class="modal-field"><label>Year</label><input id="mf-year" value="${p?p.year:'2025'}"/></div>
+      <div class="modal-field"><label>Stack (comma-sep.)</label><input id="mf-stack" value="${p?esc(p.stack.join(', ')):''}"/></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Name (EN)</label><input id="mf-name-en" value="${p?esc(t(p.name)):''}"/></div>
+      <div class="modal-field"><label>Name (FR)</label><input id="mf-name-fr" value="${p&&p.name&&p.name.fr?esc(p.name.fr):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${p?p.desc.en||t(p.desc):''}</textarea></div>
+    <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${p?p.desc.fr||'':''}</textarea></div>
+    <div class="modal-field"><label>Link (optional — GitHub, demo…)</label><input id="mf-link" value="${p&&p.link?esc(p.link):''}" placeholder="https://"/></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openEventModal(idx=-1){
+  modalMode={type:'event',index:idx};
+  const ev=idx>=0?eventsData[idx]:null;
+  document.getElementById('modal-title').textContent=idx>=0?'Edit Event':'Add Life Event';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-field"><label>Icon (emoji)</label><input id="mf-icon" value="${ev?ev.icon:'⭐'}"/></div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${ev?esc(ev.date.en):''}"/></div>
+      <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${ev?esc(ev.date.fr):''}"/></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${ev?esc(ev.title.en):''}"/></div>
+      <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${ev?esc(ev.title.fr):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${ev?ev.desc.en:''}</textarea></div>
+    <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${ev?ev.desc.fr:''}</textarea></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openLangModal(idx=-1){
+  modalMode={type:'lang',index:idx};
+  const l=idx>=0?languagesData[idx]:null;
+  document.getElementById('modal-title').textContent=idx>=0?'Edit Language':'Add Language';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-row">
+      <div class="modal-field"><label>Name (EN)</label><input id="mf-lang-en" value="${l?esc(t(l.name)):''}"/></div>
+      <div class="modal-field"><label>Name (FR)</label><input id="mf-lang-fr" value="${l&&l.name.fr?esc(l.name.fr):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Level (e.g. C1 — Advanced)</label><input id="mf-lang-level" value="${l?esc(l.level):''}"/></div>
+    <div class="modal-field"><label>Proficiency % (0–100)</label><input type="number" id="mf-lang-pct" min="0" max="100" value="${l?l.pct:50}"/></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openContactModal(idx=-1){
+  modalMode={type:'contact',index:idx};
+  const c=idx>=0?contactData[idx]:null;
+  document.getElementById('modal-title').textContent=idx>=0?'Edit Contact':'Add Contact';
+  document.getElementById('modal-fields').innerHTML=`
+    <div class="modal-row">
+      <div class="modal-field"><label>Icon (emoji)</label><input id="mf-c-icon" value="${c?esc(c.icon):'🔗'}"/></div>
+      <div class="modal-field"><label>Label</label><input id="mf-c-label" value="${c?esc(c.label):''}"/></div>
+    </div>
+    <div class="modal-field"><label>Display value</label><input id="mf-c-value" value="${c?esc(c.value):''}"/></div>
+    <div class="modal-field"><label>URL / href</label><input id="mf-c-href" value="${c?esc(c.href):''}" placeholder="https:// or mailto:"/></div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function submitModal(){
+  if(!modalMode)return;
+  const {type,index}=modalMode;
+
+  if(type==='skill'){
+    const obj={
+      category:{en:document.getElementById('mf-cat-en').value,fr:document.getElementById('mf-cat-fr').value||document.getElementById('mf-cat-en').value},
+      tags:document.getElementById('mf-tags').value.split(',').map(s=>s.trim()).filter(Boolean)
+    };
+    if(index>=0)skillsData[index]=obj;else skillsData.push(obj);
+    renderSkills();showToast(index>=0?'✓ Skill group updated':'✓ Skill group added');
+
+  } else if(type==='experience'||type==='education'){
+    const data=type==='experience'?experienceData:educationData;
+    const bulletsEn=document.getElementById('mf-bullets-en').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const bulletsFr=document.getElementById('mf-bullets-fr').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const obj={
+      date:{en:document.getElementById('mf-date-en').value,fr:document.getElementById('mf-date-fr').value||document.getElementById('mf-date-en').value},
+      title:{en:document.getElementById('mf-title-en').value,fr:document.getElementById('mf-title-fr').value||document.getElementById('mf-title-en').value},
+      org:document.getElementById('mf-org').value,
+      bullets:{en:bulletsEn,fr:bulletsFr.length?bulletsFr:bulletsEn}
+    };
+    if(index>=0)data[index]=obj;else data.push(obj);
+    renderTimeline(type,data);showToast(index>=0?'✓ Item updated':'✓ Item added');
+
+  } else if(type==='project'){
+    const obj={
+      year:document.getElementById('mf-year').value,
+      name:{en:document.getElementById('mf-name-en').value,fr:document.getElementById('mf-name-fr').value||document.getElementById('mf-name-en').value},
+      desc:{en:document.getElementById('mf-desc-en').value,fr:document.getElementById('mf-desc-fr').value||document.getElementById('mf-desc-en').value},
+      stack:document.getElementById('mf-stack').value.split(',').map(s=>s.trim()).filter(Boolean),
+      link:document.getElementById('mf-link').value.trim()||null
+    };
+    if(index>=0)projectsData[index]=obj;else projectsData.unshift(obj);
+    renderProjects();showToast(index>=0?'✓ Project updated':'✓ Project added');
+
+  } else if(type==='event'){
+    const obj={
+      icon:document.getElementById('mf-icon').value,
+      date:{en:document.getElementById('mf-date-en').value,fr:document.getElementById('mf-date-fr').value||document.getElementById('mf-date-en').value},
+      title:{en:document.getElementById('mf-title-en').value,fr:document.getElementById('mf-title-fr').value||document.getElementById('mf-title-en').value},
+      desc:{en:document.getElementById('mf-desc-en').value,fr:document.getElementById('mf-desc-fr').value||document.getElementById('mf-desc-en').value},
+      img:index>=0?eventsData[index].img:null
+    };
+    if(index>=0)eventsData[index]=obj;else eventsData.push(obj);
+    renderEvents();showToast(index>=0?'✓ Event updated':'✓ Event added');
+
+  } else if(type==='lang'){
+    const obj={
+      name:{en:document.getElementById('mf-lang-en').value,fr:document.getElementById('mf-lang-fr').value||document.getElementById('mf-lang-en').value},
+      level:document.getElementById('mf-lang-level').value,
+      pct:Math.min(100,Math.max(0,parseInt(document.getElementById('mf-lang-pct').value)||0))
+    };
+    if(index>=0)languagesData[index]=obj;else languagesData.push(obj);
+    renderLanguages();showToast(index>=0?'✓ Language updated':'✓ Language added');
+
+  } else if(type==='contact'){
+    const obj={
+      icon:document.getElementById('mf-c-icon').value,
+      label:document.getElementById('mf-c-label').value,
+      value:document.getElementById('mf-c-value').value,
+      href:document.getElementById('mf-c-href').value
+    };
+    if(index>=0)contactData[index]=obj;else contactData.push(obj);
+    renderContact();showToast(index>=0?'✓ Contact updated':'✓ Contact added');
+  }
+
+  renderContentList();
+  closeModal();
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');modalMode=null}
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+
+/* ═══════════════════════════════════════════
+   EXPORT / IMPORT
+═══════════════════════════════════════════ */
+function exportHTML(){
+  const style=getComputedStyle(document.documentElement);
+  const vars=['--bg','--bg2','--bg3','--surface','--border','--accent','--accent2','--text','--muted','--muted2','--radius'];
+  const cssVarStr=vars.map(v=>`${v}:${style.getPropertyValue(v).trim()}`).join(';');
+
+  // Snapshot all editable data + theme + hero bg text
+  const snapshot={
+    skillsData,experienceData,educationData,projectsData,eventsData,languagesData,contactData,
+    heroBgText:document.getElementById('hero-bg-text').textContent.trim(),
+    cssVars:Object.fromEntries(vars.map(v=>[v,style.getPropertyValue(v).trim()]))
+  };
+
+  const clone=document.documentElement.cloneNode(true);
+  clone.querySelector('#editor-panel')?.remove();
+  clone.querySelector('#edit-toggle')?.remove();
+  clone.querySelector('#modal-overlay')?.remove();
+  clone.querySelector('#toast')?.remove();
+  clone.querySelector('#import-file')?.remove();
+  // Remove any previous snapshot tag
+  clone.querySelector('#portfolio-data')?.remove();
+
+  // Inject snapshot as a script tag before </body>
+  const snapshotTag=document.createElement('script');
+  snapshotTag.id='portfolio-data';
+  snapshotTag.type='application/json';
+  snapshotTag.textContent=JSON.stringify(snapshot);
+  clone.querySelector('body').appendChild(snapshotTag);
+
+  const rootStyle=clone.querySelector('style');
+  if(rootStyle) rootStyle.textContent=rootStyle.textContent.replace(/:root\s*\{[^}]*\}/,`:root{${cssVarStr};--transition:0.35s cubic-bezier(.4,0,.2,1)}`);
+
+  const html='<!DOCTYPE html>\n'+clone.outerHTML;
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flash-portfolio.html';a.click();
+  showToast('⬇ Downloaded portfolio.html');
+}
+
+function importHTML(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const parser=new DOMParser();
+      const doc=parser.parseFromString(ev.target.result,'text/html');
+      const tag=doc.querySelector('#portfolio-data');
+      if(!tag) return showToast('⚠ No portfolio data found in this file');
+      const snap=JSON.parse(tag.textContent);
+
+      // Restore all data arrays
+      if(snap.skillsData)skillsData.splice(0,skillsData.length,...snap.skillsData);
+      if(snap.experienceData)experienceData.splice(0,experienceData.length,...snap.experienceData);
+      if(snap.educationData)educationData.splice(0,educationData.length,...snap.educationData);
+      if(snap.projectsData)projectsData.splice(0,projectsData.length,...snap.projectsData);
+      if(snap.eventsData)eventsData.splice(0,eventsData.length,...snap.eventsData);
+      if(snap.languagesData)languagesData.splice(0,languagesData.length,...snap.languagesData);
+      if(snap.contactData)contactData.splice(0,contactData.length,...snap.contactData);
+
+      // Restore hero bg text
+      if(snap.heroBgText) document.getElementById('hero-bg-text').textContent=snap.heroBgText;
+
+      // Restore CSS vars / theme
+      if(snap.cssVars) Object.entries(snap.cssVars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+
+      // Re-render everything
+      renderSkills();
+      renderTimeline('experience',experienceData);
+      renderTimeline('education',educationData);
+      renderProjects();
+      renderEvents();
+      renderLanguages();
+      renderContact();
+      renderContentList();
+      buildSectionList();
+      syncColorPickers(snap.cssVars||{});
+
+      showToast('✓ Portfolio imported successfully!');
+    } catch(err){
+      showToast('⚠ Failed to parse file: '+err.message);
+    }
+    // Reset file input so same file can be re-imported
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+function copyShareLink(){navigator.clipboard.writeText(window.location.href).then(()=>showToast('🔗 URL copied!'))}
+function resetAll(){if(!confirm('Reset all customizations?'))return;document.documentElement.removeAttribute('style');document.body.style.fontFamily='';showToast('↺ Reset to defaults')}
+
+/* ═══════════════════════════════════════════
+   EXPORT RESUME AS PDF
+═══════════════════════════════════════════ */
+function exportResumePDF(){
+  const style=getComputedStyle(document.documentElement);
+  const accent=style.getPropertyValue('--accent').trim()||'#c9a96e';
+  const lang=currentLang;
+
+  // Hero name from DOM
+  const heroName=document.querySelector('.hero-name')?.innerText?.replace('\n',' ')||'Portfolio';
+  const heroTitle=document.querySelector('.hero-title')?.innerText||'';
+  const heroDesc=document.querySelector('.hero-desc')?.innerText||'';
+
+  const tl=o=>typeof o==='string'?o:(o[lang]||o.en||'');
+
+  // Build sections HTML
+  function section(title,body){
+    return `<div class="rs"><div class="rs-title">${title}</div><div class="rs-body">${body}</div></div>`;
+  }
+
+  // Contact row
+  const contactRow=contactData.map(c=>`<span class="ci"><span class="ci-icon">${c.icon}</span>${c.value}</span>`).join('');
+
+  // Skills
+  const skillsHtml=skillsData.map(s=>`
+    <div class="sk-group">
+      <span class="sk-cat">${tl(s.category)}:</span>
+      <span class="sk-tags">${s.tags.join(' · ')}</span>
+    </div>`).join('');
+
+  // Timeline block (experience / education)
+  function tlHtml(data){
+    return data.map(item=>`
+      <div class="tl">
+        <div class="tl-head">
+          <span class="tl-title">${tl(item.title)}</span>
+          <span class="tl-date">${tl(item.date)}</span>
+        </div>
+        <div class="tl-org">${item.org}</div>
+        ${(item.bullets[lang]||item.bullets.en||[]).map(b=>`<div class="tl-b">▸ ${b}</div>`).join('')}
+      </div>`).join('');
+  }
+
+  // Projects (top 6)
+  const projHtml=projectsData.slice(0,6).map(p=>`
+    <div class="proj">
+      <span class="proj-name">${tl(p.name)}</span>
+      <span class="proj-year">${p.year}</span>
+      <span class="proj-stack">${p.stack.join(', ')}</span>
+      <span class="proj-desc">${tl(p.desc)}</span>
+      ${p.link?`<a class="proj-link" href="${p.link}">${p.link}</a>`:''}
+    </div>`).join('');
+
+  // Languages
+  const langHtml=languagesData.map(l=>`
+    <div class="lang-row">
+      <span class="lang-n">${tl(l.name)}</span>
+      <span class="lang-lv">${l.level}</span>
+      <div class="lang-bar-wrap"><div class="lang-bar-fill" style="width:${l.pct}%"></div></div>
+    </div>`).join('');
+
+  const nameParts=heroName.trim().split(/\s+/);
+  const lastName=nameParts.pop();
+  const firstName=nameParts.join(' ');
+  const heroNameFormatted=firstName?`${firstName} <em>${lastName}</em>`:lastName;
+
+  const resumeHTML=`<!DOCTYPE html>
+<html lang="${lang}">
+<head>
+<meta charset="UTF-8"/>
+<title></title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;font-size:9.5pt;color:#1a1a1a;background:#fff;line-height:1.5}
+a{color:${accent};text-decoration:none}
+
+/* PAGE */
+@page{size:A4;margin:14mm 16mm;marks:none}
+@media print{
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  head title{display:none}
+}
+
+/* HEADER */
+.hd{border-bottom:2.5px solid ${accent};padding-bottom:7px;margin-bottom:10px}
+.hd-name{font-family:'DM Serif Display',serif;font-size:22pt;line-height:1.1;color:#111}
+.hd-name em{font-style:italic;color:${accent}}
+.hd-title{font-family:'DM Serif Display',serif;font-style:italic;font-size:11pt;color:#555;margin:.15rem 0 .4rem}
+.hd-desc{font-size:8.5pt;color:#444;max-width:130mm;line-height:1.55;margin-bottom:.5rem}
+.contact-row{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:4px}
+.ci{font-size:8pt;color:#444;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:4px}
+.ci-icon{font-size:9pt}
+
+/* SECTIONS */
+.rs{margin-bottom:11px;page-break-inside:avoid}
+.rs-title{font-family:'DM Mono',monospace;font-size:7pt;letter-spacing:.18em;text-transform:uppercase;color:${accent};border-bottom:1px solid #e0e0e0;padding-bottom:3px;margin-bottom:7px}
+.rs-body{}
+
+/* SKILLS */
+.sk-group{display:flex;gap:6px;margin-bottom:3px;flex-wrap:wrap;align-items:baseline}
+.sk-cat{font-family:'DM Mono',monospace;font-size:7.5pt;color:#555;font-weight:500;white-space:nowrap}
+.sk-tags{font-size:8.5pt;color:#222}
+
+/* TIMELINE */
+.tl{margin-bottom:8px;page-break-inside:avoid}
+.tl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tl-title{font-family:'DM Serif Display',serif;font-size:10.5pt;color:#111}
+.tl-date{font-family:'DM Mono',monospace;font-size:7.5pt;color:#888;white-space:nowrap}
+.tl-org{font-size:8pt;color:${accent};margin:.1rem 0 .25rem;font-weight:500}
+.tl-b{font-size:8.5pt;color:#444;padding-left:10px;margin-bottom:1px}
+
+/* PROJECTS — 2-col grid */
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.proj{border:1px solid #e8e8e8;border-radius:5px;padding:5px 7px;page-break-inside:avoid}
+.proj-name{font-family:'DM Serif Display',serif;font-size:9.5pt;color:#111;display:block}
+.proj-year{font-family:'DM Mono',monospace;font-size:7pt;color:#aaa;margin-right:6px}
+.proj-stack{font-family:'DM Mono',monospace;font-size:7pt;color:${accent}}
+.proj-desc{display:block;font-size:8pt;color:#555;margin-top:2px}
+.proj-link{display:block;font-size:7pt;color:${accent};margin-top:2px;font-family:'DM Mono',monospace}
+
+/* LANGUAGES */
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 20px}
+.lang-row{display:flex;align-items:center;gap:7px}
+.lang-n{font-size:8.5pt;min-width:52px;color:#222}
+.lang-lv{font-family:'DM Mono',monospace;font-size:7pt;color:#888;min-width:70px}
+.lang-bar-wrap{flex:1;height:3px;background:#eee;border-radius:3px;overflow:hidden}
+.lang-bar-fill{height:100%;background:${accent};border-radius:3px}
+
+/* TWO-COLUMN LAYOUT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-name">${heroNameFormatted}</div>
+  <div class="hd-title">${heroTitle}</div>
+  <div class="hd-desc">${heroDesc}</div>
+  <div class="contact-row">${contactRow}</div>
+</div>
+
+<div class="two-col">
+<div>
+  ${section(lang==='fr'?'Compétences':'Skills',`<div>${skillsHtml}</div>`)}
+  ${section(lang==='fr'?'Langues':'Languages',`<div class="lang-grid">${langHtml}</div>`)}
+  ${section(lang==='fr'?'Formation':'Education',tlHtml(educationData))}
+</div>
+<div>
+  ${section(lang==='fr'?'Expérience':'Experience',tlHtml(experienceData))}
+  ${section(lang==='fr'?'Projets':'Projects',`<div class="proj-grid">${projHtml}</div>`)}
+</div>
+</div>
+
+<script>window.onload=function(){document.title='';window.print()}<\/script>
+</body>
+</html>`;
+
+  const w=window.open('','_blank');
+  w.document.write(resumeHTML);
+  w.document.close();
+  w.document.title='';
+  showToast('📄 Resume ready — use browser Print → Save as PDF');
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+buildThemePresets();
+buildSectionList();
+rebuildNav();
+renderSkills();
+renderTimeline('experience',experienceData);
+renderTimeline('education',educationData);
+renderProjects();
+renderEvents();
+renderLanguages();
+renderContact();
+renderContentList();
+setLang('en');
+syncColorPickers(themes[0]);
+</script>
+</body>
+</html>
