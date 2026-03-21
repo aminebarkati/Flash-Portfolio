@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Flash Portfolio</title>
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -1511,7 +1512,9 @@
     <!-- SIDEBAR -->
     <nav id="sidebar">
       <div class="nav-logo">
-        FP<span data-en="Portfolio" data-fr="Portfolio">Portfolio</span>
+        Built with Flash Portfolio<span data-en="Portfolio" data-fr="Portfolio"
+          >Portfolio</span
+        >
       </div>
       <div id="nav-links"></div>
       <div class="nav-socials">
@@ -1861,13 +1864,13 @@
 
       <!-- TAB: CONTENT -->
       <div class="ep-body" id="tab-content" style="display: none">
-        <div class="ep-section-title">Skills</div>
+        <div class="ep-section-title" id="ct-label-skills">Skills</div>
         <div class="item-list" id="skill-list"></div>
         <button class="ep-btn primary" onclick="openSkillModal()">
           + Add Skill Group
         </button>
 
-        <div class="ep-section-title">Experience</div>
+        <div class="ep-section-title" id="ct-label-experience">Experience</div>
         <div class="item-list" id="experience-list"></div>
         <button
           class="ep-btn primary"
@@ -1876,31 +1879,31 @@
           + Add Experience
         </button>
 
-        <div class="ep-section-title">Education</div>
+        <div class="ep-section-title" id="ct-label-education">Education</div>
         <div class="item-list" id="education-list"></div>
         <button class="ep-btn primary" onclick="openTimelineModal('education')">
           + Add Education
         </button>
 
-        <div class="ep-section-title">Projects</div>
+        <div class="ep-section-title" id="ct-label-projects">Projects</div>
         <div class="item-list" id="project-list"></div>
         <button class="ep-btn primary" onclick="openProjectModal()">
           + Add Project
         </button>
 
-        <div class="ep-section-title">Life Events</div>
+        <div class="ep-section-title" id="ct-label-life">Life Events</div>
         <div class="item-list" id="event-list"></div>
         <button class="ep-btn primary" onclick="openEventModal()">
           + Add Event
         </button>
 
-        <div class="ep-section-title">Languages</div>
+        <div class="ep-section-title" id="ct-label-languages">Languages</div>
         <div class="item-list" id="lang-list"></div>
         <button class="ep-btn primary" onclick="openLangModal()">
           + Add Language
         </button>
 
-        <div class="ep-section-title">Contact</div>
+        <div class="ep-section-title" id="ct-label-contact">Contact</div>
         <div class="item-list" id="contact-list"></div>
         <button class="ep-btn primary" onclick="openContactModal()">
           + Add Contact
@@ -2351,9 +2354,55 @@
           visible: true,
         },
       ];
-      // Registry: stores independent data for each cloned section
+      // Unified registry — ALL sections (base + clones)
       // sectionRegistry[id] = { type, data }
+      // Base section data arrays are stored BY REFERENCE so mutations reflect everywhere
+      // Registry — cloned sections only. Base sections use their own arrays.
       const sectionRegistry = {};
+      const BASE_IDS = new Set(['hero','skills','experience','education','projects','life','languages','contact']);
+
+      // ── Shared helpers for grid container IDs and classes ──────────────────
+      function _gridId(secId, type) {
+        const map = {
+          skills: 'skills-grid', experience: 'experience-timeline',
+          education: 'education-timeline', projects: 'projects-grid',
+          life: 'events-grid', languages: 'lang-grid', contact: 'contact-grid',
+        };
+        return secId + '-' + (map[type] || type + '-grid');
+      }
+      function _gridClass(type) {
+        const map = {
+          skills: 'skills-grid', experience: 'timeline',
+          education: 'timeline', projects: 'projects-grid',
+          life: 'events-grid', languages: 'lang-grid', contact: 'contact-grid',
+        };
+        return map[type] || type + '-grid';
+      }
+      // Create the DOM section element for a clone and insert it in order
+      function _createCloneDOM(cloneId) {
+        const entry = sectionRegistry[cloneId];
+        if (!entry) return;
+        const secEntry = sectionsOrder.find(function(s){ return s.id === cloneId; });
+        const label = secEntry ? secEntry.label : cloneId;
+        const gId  = _gridId(cloneId, entry.type);
+        const gCls = _gridClass(entry.type);
+        const sec  = document.createElement('section');
+        sec.id = cloneId;
+        sec.innerHTML =
+          '<p class="section-label">' + label + '</p>' +
+          '<h2 class="section-title"><em>' + label + '</em></h2>' +
+          '<div id="' + gId + '" class="' + gCls + '"></div>';
+        // Insert before the next section in order, or append
+        const idx     = sectionsOrder.findIndex(function(s){ return s.id === cloneId; });
+        const nextSec = sectionsOrder.slice(idx + 1).find(function(s){
+          return !!document.getElementById(s.id);
+        });
+        const main = document.querySelector('main');
+        if (nextSec) main.insertBefore(sec, document.getElementById(nextSec.id));
+        else         main.appendChild(sec);
+        revealObserver.observe(sec);
+        scrollObserver.observe(sec);
+      }
 
       const themes = [
         {
@@ -2689,6 +2738,7 @@
         if (editorOpen && !editModeOn) toggleEditMode();
         if (!editorOpen && editModeOn) toggleEditMode();
       }
+
       function switchTab(name) {
         ["theme", "sections", "content", "export"].forEach((t) => {
           document.getElementById("tab-" + t).style.display =
@@ -2780,6 +2830,24 @@
    EDIT MODE
 ═══════════════════════════════════════════ */
       let editModeOn = false;
+      const EDIT_SELECTOR = [
+        "main h1","main h2","main h3","main h4","main p","main li",
+        ".tl-title",".tl-org",".tl-date",".tl-desc li",
+        ".hero-eyebrow",".hero-title",".hero-desc",".hero-name em",".badge span",
+        ".section-label",".tag",".skill-card h3",
+        ".project-name",".project-desc",".project-year",".stack-tag",
+        ".event-title",".event-desc",".event-date",
+        ".lang-name",".lang-level",
+        ".contact-value",".contact-label","footer span","#hero-bg-text",
+      ].join(",");
+      function applyEditMode(root) {
+        (root || document).querySelectorAll(EDIT_SELECTOR).forEach((el) => {
+          if (!el.closest("#editor-panel") && !el.closest("#modal-overlay") && !el.closest("nav")) {
+            el.contentEditable = "true";
+            el.spellcheck = false;
+          }
+        });
+      }
       function toggleEditMode() {
         editModeOn = !editModeOn;
         const btn = document.getElementById("editmode-btn");
@@ -2866,6 +2934,17 @@
                 : sec.label;
           a.innerHTML = `<span class="dot"></span><span>${navLabel}</span>`;
           container.appendChild(a);
+
+          // Sync ALL label occurrences from the same source of truth
+          // 1. Content tab static label (base sections)
+          const ctLabel = document.getElementById("ct-label-" + sec.id);
+          if (ctLabel) ctLabel.textContent = navLabel;
+          // 2. Section <h2> on the page
+          const secEl = document.getElementById(sec.id);
+          if (secEl) {
+            const h2 = secEl.querySelector("h2.section-title");
+            if (h2) h2.innerHTML = "<em>" + navLabel + "</em>";
+          }
         });
         // Re-attach scroll spy to new links
         const newLinks = container.querySelectorAll(".nav-link");
@@ -2903,7 +2982,7 @@
           row.dataset.id = sec.id;
           row.innerHTML = `
       <span class="drag-handle">⠿</span>
-      <span class="section-row-name" contenteditable="true" spellcheck="false" onblur="renameSectionLabel('${sec.id}',this.textContent.trim())" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${sec.label}</span>
+      <span class="section-row-name" contenteditable="true" spellcheck="false" onblur="renameSectionLabel('${sec.id}',this.textContent.trim())" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${currentLang === 'fr' && sec.labelFr ? sec.labelFr : sec.labelEn || sec.label}</span>
       <button class="item-btn" title="Clone section" onclick="cloneSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">⧉</button>
       <button class="item-btn danger" title="Delete section" onclick="deleteSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">✕</button>
       <label class="toggle-switch">
@@ -2951,11 +3030,20 @@
         const sec = sectionsOrder.find((s) => s.id === id);
         if (sec) {
           sec.label = newLabel;
-          // When renamed, use the new label for both languages
-          sec.labelEn = newLabel;
-          sec.labelFr = newLabel;
+          if (currentLang === "fr") sec.labelFr = newLabel;
+          else sec.labelEn = newLabel;
+          // Keep h2 data-attrs in sync so setLang doesn't revert the rename
+          const secEl = document.getElementById(id);
+          if (secEl) {
+            const h2 = secEl.querySelector("h2.section-title");
+            if (h2) {
+              h2.setAttribute("data-" + currentLang, "<em>" + newLabel + "</em>");
+              h2.innerHTML = "<em>" + newLabel + "</em>";
+            }
+          }
         }
         rebuildNav();
+        renderContentList();
         showToast("✏️ Section renamed");
       }
       function reorderDOMSections() {
@@ -2966,122 +3054,64 @@
         });
       }
       function cloneSection(id) {
-        const original = document.getElementById(id);
-        if (!original) return;
-        const ts = Date.now();
-        const newId = id + "-clone-" + ts;
-        const idx = sectionsOrder.findIndex((s) => s.id === id);
+        const idx = sectionsOrder.findIndex(function(s){ return s.id === id; });
+        if (idx < 0) return;
         const origEntry = sectionsOrder[idx];
-        const srcType = origEntry.type || id.replace(/-clone-\d+$/, "");
+        // Resolve type — works for base sections and any depth of clones
+        const srcType = origEntry.type || 'skills';
 
-        // Deep-copy source data
+        // Deep-copy source data — from registry if clone, from base array otherwise
         let srcData;
-        switch (srcType) {
-          case "skills":
-            srcData = JSON.parse(JSON.stringify(skillsData));
-            break;
-          case "experience":
-            srcData = JSON.parse(JSON.stringify(experienceData));
-            break;
-          case "education":
-            srcData = JSON.parse(JSON.stringify(educationData));
-            break;
-          case "projects":
-            srcData = JSON.parse(JSON.stringify(projectsData));
-            break;
-          case "life":
-            srcData = JSON.parse(JSON.stringify(eventsData));
-            break;
-          case "languages":
-            srcData = JSON.parse(JSON.stringify(languagesData));
-            break;
-          case "contact":
-            srcData = JSON.parse(JSON.stringify(contactData));
-            break;
-          default:
-            srcData = [];
-        }
-        // If original is itself a clone, copy from registry
-        if (sectionRegistry[id])
+        if (sectionRegistry[id]) {
           srcData = JSON.parse(JSON.stringify(sectionRegistry[id].data));
+        } else {
+          const baseMap = {
+            skills: skillsData, experience: experienceData, education: educationData,
+            projects: projectsData, life: eventsData, languages: languagesData, contact: contactData,
+          };
+          srcData = JSON.parse(JSON.stringify(baseMap[srcType] || []));
+        }
+
+        const newId = id.replace(/-clone-\d+$/, '') + '-clone-' + Date.now();
         sectionRegistry[newId] = { type: srcType, data: srcData };
 
-        // Container IDs map per type
-        const containerMap = {
-          skills: { old: "skills-grid", new: newId + "-skills-grid" },
-          experience: {
-            old: "experience-timeline",
-            new: newId + "-experience-timeline",
-          },
-          education: {
-            old: "education-timeline",
-            new: newId + "-education-timeline",
-          },
-          projects: { old: "projects-grid", new: newId + "-projects-grid" },
-          life: { old: "events-grid", new: newId + "-events-grid" },
-          languages: { old: "lang-grid", new: newId + "-lang-grid" },
-          contact: { old: "contact-grid", new: newId + "-contact-grid" },
-        };
-
-        // Clone DOM and update IDs
-        const clone = original.cloneNode(true);
-        clone.id = newId;
-        clone.classList.remove("visible");
-        const mapping = containerMap[srcType];
-        if (mapping) {
-          const inner = clone.querySelector("#" + mapping.old);
-          if (inner) inner.id = mapping.new;
-        }
-        original.after(clone);
-        revealObserver.observe(clone);
-        scrollObserver.observe(clone);
-
-        // Register in sectionsOrder
-        const copyLabel = origEntry.label + " (copy)";
+        // Register in sectionsOrder BEFORE creating DOM (so _createCloneDOM can find the next section)
+        const copyLabel = origEntry.label + ' (copy)';
         sectionsOrder.splice(idx + 1, 0, {
           id: newId,
           type: srcType,
           label: copyLabel,
-          labelEn: (origEntry.labelEn || origEntry.label) + " (copy)",
-          labelFr: (origEntry.labelFr || origEntry.label) + " (copie)",
+          labelEn: (origEntry.labelEn || origEntry.label) + ' (copy)',
+          labelFr: (origEntry.labelFr || origEntry.label) + ' (copie)',
           visible: origEntry.visible,
         });
 
-        // Render the clone with its own data
+        _createCloneDOM(newId);
         renderSection(newId);
+        // If click-to-edit is active, make the new section's text editable too
+        if (editModeOn) {
+          const newSec = document.getElementById(newId);
+          if (newSec) applyEditMode(newSec);
+        }
         buildSectionList();
         rebuildNav();
         renderContentList();
-        showToast("⧉ Section cloned — edit it in the Content tab");
+        showToast('⧉ Section cloned — edit it in the Content tab');
       }
 
-      // Render a section by id (dispatches to right render fn using registry or original data)
       function renderSection(id) {
-        const entry = sectionRegistry[id];
+        var entry = sectionRegistry[id];
         if (!entry) return;
-        const { type, data } = entry;
+        var type = entry.type, data = entry.data;
+        var gId = _gridId(id, type);
         switch (type) {
-          case "skills":
-            renderSkills(id + "-skills-grid", data);
-            break;
-          case "experience":
-            renderTimeline("", data, id + "-experience-timeline");
-            break;
-          case "education":
-            renderTimeline("", data, id + "-education-timeline");
-            break;
-          case "projects":
-            renderProjects(id + "-projects-grid", data);
-            break;
-          case "life":
-            renderEventsInContainer(id + "-events-grid", data, id);
-            break;
-          case "languages":
-            renderLanguages(id + "-lang-grid", data);
-            break;
-          case "contact":
-            renderContact(id + "-contact-grid", data);
-            break;
+          case 'skills':     renderSkills(gId, data);                        break;
+          case 'experience': renderTimeline('', data, gId);                  break;
+          case 'education':  renderTimeline('', data, gId);                  break;
+          case 'projects':   renderProjects(gId, data);                      break;
+          case 'life':       renderEventsInContainer(gId, data, id);         break;
+          case 'languages':  renderLanguages(gId, data);                     break;
+          case 'contact':    renderContact(gId, data);                       break;
         }
       }
 
@@ -3118,31 +3148,19 @@
         reader.readAsDataURL(f);
       }
       function deleteSection(id) {
-        const coreIds = [
-          "hero",
-          "skills",
-          "experience",
-          "education",
-          "projects",
-          "life",
-          "languages",
-          "contact",
-        ];
-        if (coreIds.includes(id) && !id.includes("-clone-")) {
-          if (
-            !confirm("Delete this core section? You can toggle it off instead.")
-          )
-            return;
+        if (BASE_IDS.has(id)) {
+          if (!confirm('Delete this core section? You can toggle it off instead.')) return;
         }
-        const el = document.getElementById(id);
+        var el = document.getElementById(id);
         if (el) el.remove();
-        const idx = sectionsOrder.findIndex((s) => s.id === id);
+        var idx = sectionsOrder.findIndex(function(s){ return s.id === id; });
         if (idx >= 0) sectionsOrder.splice(idx, 1);
-        delete sectionRegistry[id];
+        // Only remove from registry if it's a clone
+        if (!BASE_IDS.has(id)) delete sectionRegistry[id];
         buildSectionList();
         rebuildNav();
         renderContentList();
-        showToast("🗑 Section deleted");
+        showToast('🗑 Section deleted');
       }
 
       /* ═══════════════════════════════════════════
@@ -3227,11 +3245,11 @@
           cl.appendChild(row);
         });
 
-        // Cloned sections — render CRUD per clone
+        // Cloned sections — render CRUD per clone (exclude base sections)
         const clonesWrap = document.getElementById("cloned-sections-wrap");
         if (clonesWrap) {
           clonesWrap.innerHTML = "";
-          const cloneIds = Object.keys(sectionRegistry);
+          const cloneIds = Object.keys(sectionRegistry).filter(function(id){ return !BASE_IDS.has(id); });
           if (cloneIds.length === 0) {
             clonesWrap.innerHTML =
               '<p style="font-size:.72rem;color:var(--muted2);font-family:DM Mono,monospace;line-height:1.6">No cloned sections yet.<br>Use ⧇ in the Sections tab to clone any section.</p>';
@@ -3239,7 +3257,14 @@
           cloneIds.forEach((cloneId) => {
             const entry = sectionRegistry[cloneId];
             const secEntry = sectionsOrder.find((s) => s.id === cloneId);
-            const label = secEntry ? secEntry.label : cloneId;
+            const navLabel =
+              currentLang === "fr" && secEntry && secEntry.labelFr
+                ? secEntry.labelFr
+                : secEntry && secEntry.labelEn
+                  ? secEntry.labelEn
+                  : secEntry
+                    ? secEntry.label
+                    : cloneId;
             const typeLabel =
               {
                 skills: "Skills",
@@ -3255,7 +3280,7 @@
             const titleEl = document.createElement("div");
             titleEl.className = "ep-section-title";
             titleEl.style.marginTop = "1rem";
-            titleEl.textContent = label + " (" + typeLabel + ")";
+            titleEl.textContent = navLabel + " (" + typeLabel + ")";
             clonesWrap.appendChild(titleEl);
 
             // Item list
@@ -3908,7 +3933,11 @@
           eventsData,
           languagesData,
           contactData,
-          sectionRegistry: JSON.parse(JSON.stringify(sectionRegistry)),
+          sectionRegistry: Object.fromEntries(
+            Object.entries(sectionRegistry)
+              .filter(function(kv){ return !BASE_IDS.has(kv[0]); })
+              .map(function(kv){ return [kv[0], JSON.parse(JSON.stringify(kv[1]))]; })
+          ),
           sectionsOrderMeta: sectionsOrder.map((s) => ({
             id: s.id,
             type: s.type,
@@ -3931,8 +3960,16 @@
         clone.querySelector("#modal-overlay")?.remove();
         clone.querySelector("#toast")?.remove();
         clone.querySelector("#import-file")?.remove();
+        clone.querySelector("#fp-welcome")?.remove();
         // Remove any previous snapshot tag
         clone.querySelector("#portfolio-data")?.remove();
+
+        // Strip all contenteditable attributes
+        clone
+          .querySelectorAll("[contenteditable]")
+          .forEach((el) => el.removeAttribute("contenteditable"));
+        // Strip edit-mode class from body if present
+        clone.querySelector("body")?.classList.remove("edit-mode");
 
         // Inject snapshot as a script tag before </body>
         const snapshotTag = document.createElement("script");
@@ -3948,112 +3985,129 @@
             `:root{${cssVarStr};--transition:0.35s cubic-bezier(.4,0,.2,1)}`,
           );
 
+        // Set <title> to the person's name
+        const personName = (document.querySelector('.hero-name') || {}).innerText || '';
+        const cleanName = personName.replace(/\s+/g, ' ').trim() || 'Portfolio';
+        const cloneTitle = clone.querySelector('title');
+        if (cloneTitle) cloneTitle.textContent = cleanName + ' — Portfolio';
+        const safeFilename = cleanName.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
         const html = "<!DOCTYPE html>\n" + clone.outerHTML;
         const blob = new Blob([html], { type: "text/html" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "flash-portfolio.html";
+        a.download = (safeFilename || 'portfolio') + '.html';
         a.click();
-        showToast("⬇ Downloaded portfolio.html");
+        showToast("⬇ Downloaded " + (safeFilename || 'portfolio') + ".html");
       }
 
       function importHTML(e) {
-        const file = e.target.files[0];
+        var file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (ev) {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
           try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(ev.target.result, "text/html");
-            const tag = doc.querySelector("#portfolio-data");
-            if (!tag)
-              return showToast("⚠ No portfolio data found in this file");
-            const snap = JSON.parse(tag.textContent);
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(ev.target.result, 'text/html');
+            var tag = doc.querySelector('#portfolio-data');
+            if (!tag) return showToast('\u26a0 No portfolio data found in this file');
+            var snap = JSON.parse(tag.textContent);
 
-            // Restore all data arrays
-            if (snap.skillsData)
-              skillsData.splice(0, skillsData.length, ...snap.skillsData);
-            if (snap.experienceData)
-              experienceData.splice(
-                0,
-                experienceData.length,
-                ...snap.experienceData,
-              );
-            if (snap.educationData)
-              educationData.splice(
-                0,
-                educationData.length,
-                ...snap.educationData,
-              );
-            if (snap.projectsData)
-              projectsData.splice(0, projectsData.length, ...snap.projectsData);
-            if (snap.eventsData)
-              eventsData.splice(0, eventsData.length, ...snap.eventsData);
-            if (snap.languagesData)
-              languagesData.splice(
-                0,
-                languagesData.length,
-                ...snap.languagesData,
-              );
-            if (snap.contactData)
-              contactData.splice(0, contactData.length, ...snap.contactData);
+            // 1. Restore base data arrays
+            if (snap.skillsData)    skillsData.splice(0, skillsData.length, ...snap.skillsData);
+            if (snap.experienceData) experienceData.splice(0, experienceData.length, ...snap.experienceData);
+            if (snap.educationData)  educationData.splice(0, educationData.length, ...snap.educationData);
+            if (snap.projectsData)   projectsData.splice(0, projectsData.length, ...snap.projectsData);
+            if (snap.eventsData)     eventsData.splice(0, eventsData.length, ...snap.eventsData);
+            if (snap.languagesData)  languagesData.splice(0, languagesData.length, ...snap.languagesData);
+            if (snap.contactData)    contactData.splice(0, contactData.length, ...snap.contactData);
 
-            // Restore hero bg text
-            if (snap.heroBgText)
-              document.getElementById("hero-bg-text").textContent =
-                snap.heroBgText;
+            // 2. Remove all existing cloned DOM sections + clear clone registry
+            Object.keys(sectionRegistry).forEach(function(id) {
+              var el = document.getElementById(id);
+              if (el) el.remove();
+              delete sectionRegistry[id];
+            });
 
-            // Restore cloned sections registry
-            if (snap.sectionRegistry) {
-              Object.keys(sectionRegistry).forEach(
-                (k) => delete sectionRegistry[k],
-              );
-              Object.assign(sectionRegistry, snap.sectionRegistry);
-            }
+            // 3. Rebuild sectionsOrder entirely from snapshot (preserves interleaved order)
             if (snap.sectionsOrderMeta) {
-              snap.sectionsOrderMeta.forEach((meta) => {
-                const existing = sectionsOrder.find((s) => s.id === meta.id);
-                if (existing) {
-                  existing.label = meta.label;
-                  existing.labelEn = meta.labelEn;
-                  existing.labelFr = meta.labelFr;
-                } else {
-                  sectionsOrder.push({
-                    id: meta.id,
-                    type: meta.type,
-                    label: meta.label,
-                    labelEn: meta.labelEn,
-                    labelFr: meta.labelFr,
-                    visible: meta.visible,
-                  });
+              // Build a lookup of current base entries to preserve their live objects
+              var baseMap = {};
+              sectionsOrder.forEach(function(s){ if (BASE_IDS.has(s.id)) baseMap[s.id] = s; });
+              // Rebuild in snapshot order
+              var newOrder = snap.sectionsOrderMeta.map(function(meta) {
+                if (BASE_IDS.has(meta.id) && baseMap[meta.id]) {
+                  // Update base entry labels in place
+                  var s = baseMap[meta.id];
+                  s.label = meta.label; s.labelEn = meta.labelEn;
+                  s.labelFr = meta.labelFr; s.visible = meta.visible;
+                  return s;
                 }
+                // Clone entry — create fresh
+                return { id: meta.id, type: meta.type, label: meta.label,
+                         labelEn: meta.labelEn, labelFr: meta.labelFr, visible: meta.visible };
+              });
+              sectionsOrder.splice(0, sectionsOrder.length, ...newOrder);
+            }
+
+            // 4. Restore clone registry (non-base entries only)
+            if (snap.sectionRegistry) {
+              Object.entries(snap.sectionRegistry).forEach(function(kv) {
+                var id = kv[0], entry = kv[1];
+                if (!BASE_IDS.has(id)) sectionRegistry[id] = entry;
               });
             }
 
-            // Restore CSS vars / theme
-            if (snap.cssVars)
-              Object.entries(snap.cssVars).forEach(([k, v]) =>
-                document.documentElement.style.setProperty(k, v),
-              );
+            // 5. Recreate DOM for every clone — just append, reorderDOMSections will sort everything
+            var main = document.querySelector('main');
+            sectionsOrder.forEach(function(sec) {
+              if (!BASE_IDS.has(sec.id) && sectionRegistry[sec.id] && !document.getElementById(sec.id)) {
+                var entry  = sectionRegistry[sec.id];
+                var secEnt = sec;
+                var label  = secEnt.label || sec.id;
+                var gId    = _gridId(sec.id, entry.type);
+                var gCls   = _gridClass(entry.type);
+                var el     = document.createElement('section');
+                el.id      = sec.id;
+                el.innerHTML =
+                  '<p class="section-label">' + label + '</p>' +
+                  '<h2 class="section-title"><em>' + label + '</em></h2>' +
+                  '<div id="' + gId + '" class="' + gCls + '"></div>';
+                main.appendChild(el);   // position doesn't matter — reorderDOMSections fixes it
+                revealObserver.observe(el);
+                scrollObserver.observe(el);
+              }
+            });
 
-            // Re-render everything
+            // 6. Restore hero bg + theme
+            if (snap.heroBgText)
+              document.getElementById('hero-bg-text').textContent = snap.heroBgText;
+            if (snap.cssVars)
+              Object.entries(snap.cssVars).forEach(function(kv){
+                document.documentElement.style.setProperty(kv[0], kv[1]);
+              });
+
+            // 7. Re-render everything
             renderSkills();
-            renderTimeline("experience", experienceData);
-            renderTimeline("education", educationData);
+            renderTimeline('experience', experienceData);
+            renderTimeline('education', educationData);
             renderProjects();
             renderEvents();
             renderLanguages();
             renderContact();
-            renderContentList();
+            Object.keys(sectionRegistry).forEach(function(id) {
+              if (!BASE_IDS.has(id)) renderSection(id);
+            });
+            reorderDOMSections();
             buildSectionList();
             syncColorPickers(snap.cssVars || {});
+            rebuildNav();
+            renderContentList();
 
-            showToast("✓ Portfolio imported successfully!");
-          } catch (err) {
-            showToast("⚠ Failed to parse file: " + err.message);
+            showToast('\u2713 Portfolio imported successfully!');
+          } catch(err) {
+            showToast('\u26a0 Failed to parse file: ' + err.message);
           }
-          // Reset file input so same file can be re-imported
-          e.target.value = "";
+          e.target.value = '';
         };
         reader.readAsText(file);
       }
@@ -4648,6 +4702,67 @@
       /* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
+      // Restore snapshot if present (exported file)
+      (function () {
+        const snap = document.getElementById("portfolio-data");
+        if (!snap) return;
+        try {
+          const data = JSON.parse(snap.textContent);
+          if (data.skillsData)
+            skillsData.splice(0, skillsData.length, ...data.skillsData);
+          if (data.experienceData)
+            experienceData.splice(
+              0,
+              experienceData.length,
+              ...data.experienceData,
+            );
+          if (data.educationData)
+            educationData.splice(
+              0,
+              educationData.length,
+              ...data.educationData,
+            );
+          if (data.projectsData)
+            projectsData.splice(0, projectsData.length, ...data.projectsData);
+          if (data.eventsData)
+            eventsData.splice(0, eventsData.length, ...data.eventsData);
+          if (data.languagesData)
+            languagesData.splice(
+              0,
+              languagesData.length,
+              ...data.languagesData,
+            );
+          if (data.contactData)
+            contactData.splice(0, contactData.length, ...data.contactData);
+          if (data.sectionsOrderMeta) {
+            data.sectionsOrderMeta.forEach(function (meta) {
+              const s = sectionsOrder.find(function (x) {
+                return x.id === meta.id;
+              });
+              if (s) {
+                s.label = meta.label;
+                s.labelEn = meta.labelEn;
+                s.labelFr = meta.labelFr;
+                s.visible = meta.visible;
+              }
+            });
+          }
+          if (data.heroBgText) {
+            const bgEl = document.getElementById("hero-bg-text");
+            if (bgEl) bgEl.textContent = data.heroBgText;
+          }
+          if (data.cssVars) {
+            Object.entries(data.cssVars).forEach(function ([k, v]) {
+              document.documentElement.style.setProperty(k, v);
+            });
+          }
+          if (data.sectionRegistry)
+            Object.assign(sectionRegistry, data.sectionRegistry);
+        } catch (e) {
+          console.warn("Snapshot restore failed:", e);
+        }
+      })();
+
       buildThemePresets();
       buildSectionList();
       rebuildNav();
@@ -4660,6 +4775,7 @@
       renderContentList();
       setLang("en");
       syncColorPickers(themes[0]);
+      toggleEditor();
     </script>
 
     <!-- ══ WELCOME MODAL ══ -->
@@ -4893,11 +5009,11 @@
           </div>
         </div>
         <div class="fp-actions">
-          <button class="fp-btn fp-btn-primary" onclick="fpClose()">
+          <button class="fp-btn fp-btn-primary" onclick="fpClose(false)">
             Get started →
           </button>
-          <button class="fp-btn fp-btn-ghost" onclick="fpClose()">
-            I'll explore on my own
+          <button class="fp-btn fp-btn-ghost" onclick="fpClose(true)">
+            Don't show again
           </button>
         </div>
       </div>
@@ -4905,17 +5021,21 @@
 
     <script>
       (function () {
-        var KEY = "fp-seen";
-        function fpClose() {
+        var KEY = "fp-seen-v2";
+        function fpClose(permanent) {
           document.getElementById("fp-welcome").classList.remove("open");
-          try {
-            localStorage.setItem(KEY, "1");
-          } catch (e) {}
+          if (permanent) {
+            try { localStorage.setItem(KEY, "1"); } catch(e) {}
+          }
         }
         window.fpClose = fpClose;
-        setTimeout(function () {
-          document.getElementById("fp-welcome").classList.add("open");
-        }, 500);
+        var seen = false;
+        try { seen = !!localStorage.getItem(KEY); } catch(e) {}
+        if (!seen) {
+          setTimeout(function () {
+            document.getElementById("fp-welcome").classList.add("open");
+          }, 500);
+        }
         // Reopen button in Theme tab
         var themeTab = document.getElementById("tab-theme");
         if (themeTab) {
@@ -4932,7 +5052,6 @@
           themeTab.appendChild(btn);
         }
       })();
-      toggleEditor();
     </script>
   </body>
 </html>
