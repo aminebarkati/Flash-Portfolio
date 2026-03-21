@@ -2208,6 +2208,7 @@
           type: "skills",
           label: "Skills & Technologies",
           labelEn: "Skills & Technologies",
+          eyebrow: "What I work with",
           visible: true,
         },
         {
@@ -2215,6 +2216,7 @@
           type: "experience",
           label: "Experience",
           labelEn: "Experience",
+          eyebrow: "Professional journey",
           visible: true,
         },
         {
@@ -2222,6 +2224,7 @@
           type: "education",
           label: "Education",
           labelEn: "Education",
+          eyebrow: "Academic background",
           visible: true,
         },
         {
@@ -2229,6 +2232,7 @@
           type: "projects",
           label: "Projects",
           labelEn: "Projects",
+          eyebrow: "What I've built",
           visible: true,
         },
         {
@@ -2236,6 +2240,7 @@
           type: "life",
           label: "Life Events",
           labelEn: "Life Events",
+          eyebrow: "Beyond code",
           visible: true,
         },
         {
@@ -2243,6 +2248,7 @@
           type: "languages",
           label: "Languages",
           labelEn: "Languages",
+          eyebrow: "Communication",
           visible: true,
         },
         {
@@ -2250,6 +2256,7 @@
           type: "contact",
           label: "Get in Touch",
           labelEn: "Get in Touch",
+          eyebrow: "Let's connect",
           visible: true,
         },
       ];
@@ -2302,13 +2309,14 @@
           return s.id === cloneId;
         });
         const label = secEntry ? secEntry.label : cloneId;
+        const eyebrow = secEntry ? secEntry.eyebrow : label;
         const gId = _gridId(cloneId, entry.type);
         const gCls = _gridClass(entry.type);
         const sec = document.createElement("section");
         sec.id = cloneId;
         sec.innerHTML =
           '<p class="section-label">' +
-          label +
+          eyebrow +
           "</p>" +
           '<h2 class="section-title"><em>' +
           label +
@@ -2886,6 +2894,7 @@
           row.innerHTML = `
       <span class="drag-handle">⠿</span>
       <span class="section-row-name" contenteditable="true" spellcheck="false" onblur="renameSectionLabel('${sec.id}',this.textContent.trim())" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${sec.labelEn || sec.label}</span>
+      <button class="item-btn" title="Edit label" onclick="openSectionLabelModal('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">✏</button>
       <button class="item-btn" title="Clone section" onclick="cloneSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">⧉</button>
       <button class="item-btn danger" title="Delete section" onclick="deleteSection('${sec.id}')" style="flex-shrink:0;padding:.2rem .45rem;font-size:.72rem">✕</button>
       <label class="toggle-switch">
@@ -2991,6 +3000,7 @@
           type: srcType,
           label: copyLabel,
           labelEn: (origEntry.labelEn || origEntry.label) + " (copy)",
+          eyebrow: origEntry.eyebrow,
           visible: origEntry.visible,
         });
 
@@ -3442,6 +3452,25 @@
         document.getElementById("modal-overlay").classList.add("open");
       }
 
+      function openSectionLabelModal(sectionId) {
+        const sec = sectionsOrder.find((s) => s.id === sectionId);
+        if (!sec) return;
+        modalMode = { type: "section_label", sectionId };
+        document.getElementById("modal-title").textContent =
+          "Edit Section Labels";
+        document.getElementById("modal-fields").innerHTML = `
+    <div class="modal-field">
+      <label>Section Eyebrow (above title)</label>
+      <input id="mf-section-eyebrow" value="${esc(sec.eyebrow || "")}" placeholder="e.g., What I work with"/>
+    </div>
+    <div class="modal-field">
+      <label>Section Title</label>
+      <input id="mf-section-title" value="${esc(sec.labelEn || sec.label)}" placeholder="Enter section title"/>
+    </div>
+    <p style="font-size: 0.75rem; color: var(--muted); margin-top: 0.75rem;">The eyebrow appears as a small label above the title. The title is the main heading.</p>`;
+        document.getElementById("modal-overlay").classList.add("open");
+      }
+
       function openSkillModal(idx = -1) {
         modalMode = { type: "skill", index: idx };
         const s = idx >= 0 ? skillsData[idx] : null;
@@ -3577,6 +3606,44 @@
           }
 
           showToast("✓ Hero section updated");
+          closeModal();
+        } else if (type === "section_label") {
+          const newEyebrow = document
+            .getElementById("mf-section-eyebrow")
+            .value.trim();
+          const newTitle = document
+            .getElementById("mf-section-title")
+            .value.trim();
+          if (!newTitle) {
+            showToast("⚠ Title cannot be empty");
+            return;
+          }
+          const { sectionId } = modalMode;
+          const sec = sectionsOrder.find((s) => s.id === sectionId);
+          if (sec) {
+            sec.label = newTitle;
+            sec.labelEn = newTitle;
+            sec.eyebrow = newEyebrow;
+
+            // Update DOM elements
+            const secEl = document.getElementById(sectionId);
+            if (secEl) {
+              const eyebrowEl = secEl.querySelector("p.section-label");
+              if (eyebrowEl) {
+                eyebrowEl.textContent = newEyebrow;
+                eyebrowEl.setAttribute("data-en", newEyebrow);
+              }
+              const h2 = secEl.querySelector("h2.section-title");
+              if (h2) {
+                h2.setAttribute("data-en", "<em>" + newTitle + "</em>");
+                h2.innerHTML = "<em>" + newTitle + "</em>";
+              }
+            }
+            buildSectionList();
+            rebuildNav();
+            renderContentList();
+            showToast("✓ Section labels updated");
+          }
           closeModal();
         } else if (type === "skill") {
           const obj = {
@@ -3846,11 +3913,32 @@
             type: s.type,
             label: s.label,
             labelEn: s.labelEn,
+            eyebrow: s.eyebrow,
             visible: s.visible,
           })),
           heroBgText: document
             .getElementById("hero-bg-text")
             .textContent.trim(),
+          heroDOMData: {
+            firstName: document.querySelector(".hero-name em")?.innerText || "",
+            lastName:
+              document
+                .querySelector(".hero-name")
+                ?.childNodes[0]?.textContent?.trim() || "",
+            eyebrow: document.querySelector(".hero-eyebrow")?.innerText || "",
+            title: document.querySelector(".hero-title")?.innerText || "",
+            desc: document.querySelector(".hero-desc")?.innerText || "",
+            available:
+              document.querySelector(
+                ".hero-badges .badge:nth-child(1) span:last-child",
+              )?.innerText || "",
+            location:
+              document.querySelector(".hero-badges .badge:nth-child(2)")
+                ?.innerText || "",
+            languages:
+              document.querySelector(".hero-badges .badge:nth-child(3)")
+                ?.innerText || "",
+          },
           cssVars: Object.fromEntries(
             vars.map((v) => [v, style.getPropertyValue(v).trim()]),
           ),
@@ -3981,6 +4069,7 @@
                   var s = baseMap[meta.id];
                   s.label = meta.label;
                   s.labelEn = meta.labelEn;
+                  s.eyebrow = meta.eyebrow;
                   s.visible = meta.visible;
                   return s;
                 }
@@ -3990,6 +4079,7 @@
                   type: meta.type,
                   label: meta.label,
                   labelEn: meta.labelEn,
+                  eyebrow: meta.eyebrow,
                   visible: meta.visible,
                 };
               });
@@ -4038,7 +4128,44 @@
               }
             });
 
-            // 6. Restore hero bg + theme
+            // 6. Restore hero section DOM content
+            if (snap.heroDOMData) {
+              var heroData = snap.heroDOMData;
+              if (heroData.firstName || heroData.lastName) {
+                document.querySelector(".hero-name").innerHTML =
+                  (heroData.lastName || "") +
+                  "<br /><em>" +
+                  (heroData.firstName || "") +
+                  "</em>";
+              }
+              if (heroData.eyebrow)
+                document.querySelector(".hero-eyebrow").textContent =
+                  heroData.eyebrow;
+              if (heroData.title)
+                document.querySelector(".hero-title").textContent =
+                  heroData.title;
+              if (heroData.desc)
+                document.querySelector(".hero-desc").textContent =
+                  heroData.desc;
+              if (
+                heroData.available ||
+                heroData.location ||
+                heroData.languages
+              ) {
+                var badges = document.querySelectorAll(".hero-badges .badge");
+                if (heroData.available && badges[0])
+                  badges[0].innerHTML =
+                    '<span class="dot"></span><span>' +
+                    heroData.available +
+                    "</span>";
+                if (heroData.location && badges[1])
+                  badges[1].textContent = heroData.location;
+                if (heroData.languages && badges[2])
+                  badges[2].textContent = heroData.languages;
+              }
+            }
+
+            // 6b. Restore hero bg + theme
             if (snap.heroBgText)
               document.getElementById("hero-bg-text").textContent =
                 snap.heroBgText;
@@ -4047,7 +4174,22 @@
                 document.documentElement.style.setProperty(kv[0], kv[1]);
               });
 
-            // 7. Re-render everything
+            // 7. Sync base section labels with eyebrow data
+            BASE_IDS.forEach(function (baseId) {
+              var secIdx = sectionsOrder.findIndex(function (s) {
+                return s.id === baseId;
+              });
+              if (secIdx !== -1 && secIdx >= 0) {
+                var eyebrow = sectionsOrder[secIdx].eyebrow || "";
+                var secEl = document.getElementById(baseId);
+                if (secEl) {
+                  var labelEl = secEl.querySelector(".section-label");
+                  if (labelEl) labelEl.textContent = eyebrow;
+                }
+              }
+            });
+
+            // 8. Re-render everything
             renderSkills();
             renderTimeline("experience", experienceData);
             renderTimeline("education", educationData);
@@ -4599,6 +4741,7 @@
               if (s) {
                 s.label = meta.label;
                 s.labelEn = meta.labelEn;
+                s.eyebrow = meta.eyebrow;
                 s.visible = meta.visible;
               }
             });
