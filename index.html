@@ -1634,7 +1634,8 @@
         >Built with Flash Portfolio ⚡</span
       >
     </footer>
-    LIGHTBOX -->
+
+    <!-- LIGHTBOX -->
     <div id="lightbox">
       <button id="lightbox-close" onclick="closeLightbox()">✕</button>
       <img id="lightbox-img" src="" alt="Event photo" />
@@ -2668,9 +2669,6 @@
           document.documentElement.style.setProperty("--bg3", lighten(val, 14));
         }
       }
-      function applyVar(v, val) {
-        document.documentElement.style.setProperty(v, val);
-      }
       function applyFont(t, val) {
         document.body.style.fontFamily = val;
       }
@@ -2753,25 +2751,22 @@
           c.appendChild(b);
         });
       }
+      // Precompute accent colors once for PDF export
+      const pdfAccent = (() => {
+        const style = getComputedStyle(document.documentElement);
+        return style.getPropertyValue("--accent").trim() || "#c9a96e";
+      })();
+      function hexToRgba(hex, alpha) {
+        const hx = hex.replace("#", "");
+        const r = parseInt(hx.slice(0, 2), 16);
+        const g = parseInt(hx.slice(2, 4), 16);
+        const b = parseInt(hx.slice(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
 
       /* ═══════════════════════════════════════════
    EDIT MODE
 ═══════════════════════════════════════════ */
-      let editModeOn = false;
-      const EDIT_SELECTOR = [].join(",");
-      function applyEditMode(root) {
-        (root || document).querySelectorAll(EDIT_SELECTOR).forEach((el) => {
-          if (
-            !el.closest("#editor-panel") &&
-            !el.closest("#modal-overlay") &&
-            !el.closest("nav")
-          ) {
-            el.contentEditable = "true";
-            el.spellcheck = false;
-            el.onblur = syncEditableContent;
-          }
-        });
-      }
       function syncEditableContent() {
         // Save all contenteditable changes back to underlying data
         document.querySelectorAll("[data-edit-type]").forEach((el) => {
@@ -3001,11 +2996,6 @@
 
         _createCloneDOM(newId);
         renderSection(newId);
-        // If click-to-edit is active, make the new section's text editable too
-        if (editModeOn) {
-          const newSec = document.getElementById(newId);
-          if (newSec) applyEditMode(newSec);
-        }
         buildSectionList();
         rebuildNav();
         renderContentList();
@@ -3363,58 +3353,33 @@
 
       // Field builders (return HTML string)
       function _buildSkillFields(item) {
-        return `<div class="modal-row">
-          <div class="modal-field"><label>Category (EN)</label><input id="mf-cat-en" value="${item ? esc(item.category.en || item.category) : ""}"/></div>
-          <div class="modal-field"><label>Category (FR)</label><input id="mf-cat-fr" value="${item ? esc(item.category.fr || item.category.en || item.category) : ""}"/></div>
-        </div>
+        return `<div class="modal-field"><label>Category</label><input id="mf-cat-en" value="${item ? esc(item.category.en || item.category) : ""}"/></div>
         <div class="modal-field"><label>Tags (comma-separated)</label><input id="mf-tags" value="${item ? esc(item.tags.join(", ")) : ""}"/></div>`;
       }
       function _buildTimelineFields(item) {
         const bEn = item ? (item.bullets.en || []).join("\n") : "";
-        const bFr = item ? (item.bullets.fr || []).join("\n") : "";
-        return `<div class="modal-row">
-          <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
-          <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item ? esc(item.date.fr || "") : ""}"/></div>
-        </div>
-        <div class="modal-row">
-          <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item ? esc(t(item.title)) : ""}"/></div>
-          <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item && item.title.fr ? esc(item.title.fr) : ""}"/></div>
-        </div>
+        return `<div class="modal-field"><label>Date</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
+        <div class="modal-field"><label>Title</label><input id="mf-title-en" value="${item ? esc(t(item.title)) : ""}"/></div>
         <div class="modal-field"><label>Organisation</label><input id="mf-org" value="${item ? esc(item.org) : ""}"/></div>
-        <div class="modal-field"><label>Bullets EN (one per line)</label><textarea id="mf-bullets-en" rows="3">${bEn}</textarea></div>
-        <div class="modal-field"><label>Bullets FR (one per line)</label><textarea id="mf-bullets-fr" rows="3">${bFr}</textarea></div>`;
+        <div class="modal-field"><label>Bullet points (one per line)</label><textarea id="mf-bullets-en" rows="3">${bEn}</textarea></div>`;
       }
       function _buildProjectFields(item) {
         return `<div class="modal-row">
           <div class="modal-field"><label>Year</label><input id="mf-year" value="${item ? item.year : "2025"}"/></div>
           <div class="modal-field"><label>Stack (comma-sep.)</label><input id="mf-stack" value="${item ? esc(item.stack.join(", ")) : ""}"/></div>
         </div>
-        <div class="modal-row">
-          <div class="modal-field"><label>Name (EN)</label><input id="mf-name-en" value="${item ? esc(t(item.name)) : ""}"/></div>
-          <div class="modal-field"><label>Name (FR)</label><input id="mf-name-fr" value="${item && item.name && item.name.fr ? esc(item.name.fr) : ""}"/></div>
-        </div>
-        <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${item ? item.desc.en || t(item.desc) : ""}</textarea></div>
-        <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${item ? item.desc.fr || "" : ""}</textarea></div>
+        <div class="modal-field"><label>Name</label><input id="mf-name-en" value="${item ? esc(t(item.name)) : ""}"/></div>
+        <div class="modal-field"><label>Description</label><textarea id="mf-desc-en">${item ? item.desc.en || t(item.desc) : ""}</textarea></div>
         <div class="modal-field"><label>Link (optional)</label><input id="mf-link" value="${item && item.link ? esc(item.link) : ""}" placeholder="https://"/></div>`;
       }
       function _buildEventFields(item) {
         return `<div class="modal-field"><label>Icon (emoji)</label><input id="mf-icon" value="${item ? item.icon : "⭐"}"/></div>
-        <div class="modal-row">
-          <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
-          <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item ? esc(item.date.fr || "") : ""}"/></div>
-        </div>
-        <div class="modal-row">
-          <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item ? esc(item.title.en) : ""}"/></div>
-          <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item ? esc(item.title.fr || "") : ""}"/></div>
-        </div>
-        <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${item ? item.desc.en : ""}</textarea></div>
-        <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${item ? item.desc.fr || "" : ""}</textarea></div>`;
+        <div class="modal-field"><label>Date</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
+        <div class="modal-field"><label>Title</label><input id="mf-title-en" value="${item ? esc(item.title.en) : ""}"/></div>
+        <div class="modal-field"><label>Description</label><textarea id="mf-desc-en">${item ? item.desc.en : ""}</textarea></div>`;
       }
       function _buildLangFields(item) {
-        return `<div class="modal-row">
-          <div class="modal-field"><label>Name (EN)</label><input id="mf-lang-en" value="${item ? esc(t(item.name)) : ""}"/></div>
-          <div class="modal-field"><label>Name (FR)</label><input id="mf-lang-fr" value="${item && item.name.fr ? esc(item.name.fr) : ""}"/></div>
-        </div>
+        return `<div class="modal-field"><label>Name</label><input id="mf-lang-en" value="${item ? esc(t(item.name)) : ""}"/></div>
         <div class="modal-field"><label>Level (e.g. C1 — Advanced)</label><input id="mf-lang-level" value="${item ? esc(item.level) : ""}"/></div>
         <div class="modal-field"><label>Proficiency % (0–100)</label><input type="number" id="mf-lang-pct" min="0" max="100" value="${item ? item.pct : 50}"/></div>`;
       }
@@ -3483,10 +3448,7 @@
         document.getElementById("modal-title").textContent =
           idx >= 0 ? "Edit Skill Group" : "Add Skill Group";
         document.getElementById("modal-fields").innerHTML = `
-    <div class="modal-row">
-      <div class="modal-field"><label>Category (EN)</label><input id="mf-cat-en" value="${s ? esc(s.category.en || s.category) : ""}"/></div>
-      <div class="modal-field"><label>Category (FR)</label><input id="mf-cat-fr" value="${s ? esc(s.category.fr || s.category.en || s.category) : ""}"/></div>
-    </div>
+    <div class="modal-field"><label>Category</label><input id="mf-cat-en" value="${s ? esc(s.category.en || s.category) : ""}"/></div>
     <div class="modal-field"><label>Tags (comma-separated)</label><input id="mf-tags" value="${s ? esc(s.tags.join(", ")) : ""}"/></div>`;
         document.getElementById("modal-overlay").classList.add("open");
       }
@@ -3499,19 +3461,11 @@
         document.getElementById("modal-title").textContent =
           idx >= 0 ? `Edit ${label}` : `Add ${label}`;
         const bulletsEn = item ? (item.bullets.en || []).join("\n") : "";
-        const bulletsFr = item ? (item.bullets.fr || []).join("\n") : "";
         document.getElementById("modal-fields").innerHTML = `
-    <div class="modal-row">
-      <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
-      <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${item ? esc(item.date.fr) : ""}"/></div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${item ? esc(t(item.title)) : ""}"/></div>
-      <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${item && item.title.fr ? esc(item.title.fr) : ""}"/></div>
-    </div>
+    <div class="modal-field"><label>Date</label><input id="mf-date-en" value="${item ? esc(item.date.en) : ""}"/></div>
+    <div class="modal-field"><label>Title</label><input id="mf-title-en" value="${item ? esc(t(item.title)) : ""}"/></div>
     <div class="modal-field"><label>Organisation</label><input id="mf-org" value="${item ? esc(item.org) : ""}"/></div>
-    <div class="modal-field"><label>Bullet points EN (one per line)</label><textarea id="mf-bullets-en" rows="4">${bulletsEn}</textarea></div>
-    <div class="modal-field"><label>Bullet points FR (one per line)</label><textarea id="mf-bullets-fr" rows="4">${bulletsFr}</textarea></div>`;
+    <div class="modal-field"><label>Bullet points (one per line)</label><textarea id="mf-bullets-en" rows="4">${bulletsEn}</textarea></div>`;
         document.getElementById("modal-overlay").classList.add("open");
       }
 
@@ -3525,12 +3479,8 @@
       <div class="modal-field"><label>Year</label><input id="mf-year" value="${p ? p.year : "2025"}"/></div>
       <div class="modal-field"><label>Stack (comma-sep.)</label><input id="mf-stack" value="${p ? esc(p.stack.join(", ")) : ""}"/></div>
     </div>
-    <div class="modal-row">
-      <div class="modal-field"><label>Name (EN)</label><input id="mf-name-en" value="${p ? esc(t(p.name)) : ""}"/></div>
-      <div class="modal-field"><label>Name (FR)</label><input id="mf-name-fr" value="${p && p.name && p.name.fr ? esc(p.name.fr) : ""}"/></div>
-    </div>
-    <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${p ? p.desc.en || t(p.desc) : ""}</textarea></div>
-    <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${p ? p.desc.fr || "" : ""}</textarea></div>
+    <div class="modal-field"><label>Name</label><input id="mf-name-en" value="${p ? esc(t(p.name)) : ""}"/></div>
+    <div class="modal-field"><label>Description</label><textarea id="mf-desc-en">${p ? p.desc.en || t(p.desc) : ""}</textarea></div>
     <div class="modal-field"><label>Link (optional — GitHub, demo…)</label><input id="mf-link" value="${p && p.link ? esc(p.link) : ""}" placeholder="https://"/></div>`;
         document.getElementById("modal-overlay").classList.add("open");
       }
@@ -3542,16 +3492,9 @@
           idx >= 0 ? "Edit Event" : "Add Life Event";
         document.getElementById("modal-fields").innerHTML = `
     <div class="modal-field"><label>Icon (emoji)</label><input id="mf-icon" value="${ev ? ev.icon : "⭐"}"/></div>
-    <div class="modal-row">
-      <div class="modal-field"><label>Date (EN)</label><input id="mf-date-en" value="${ev ? esc(ev.date.en) : ""}"/></div>
-      <div class="modal-field"><label>Date (FR)</label><input id="mf-date-fr" value="${ev ? esc(ev.date.fr) : ""}"/></div>
-    </div>
-    <div class="modal-row">
-      <div class="modal-field"><label>Title (EN)</label><input id="mf-title-en" value="${ev ? esc(ev.title.en) : ""}"/></div>
-      <div class="modal-field"><label>Title (FR)</label><input id="mf-title-fr" value="${ev ? esc(ev.title.fr) : ""}"/></div>
-    </div>
-    <div class="modal-field"><label>Description (EN)</label><textarea id="mf-desc-en">${ev ? ev.desc.en : ""}</textarea></div>
-    <div class="modal-field"><label>Description (FR)</label><textarea id="mf-desc-fr">${ev ? ev.desc.fr : ""}</textarea></div>
+    <div class="modal-field"><label>Date</label><input id="mf-date-en" value="${ev ? esc(ev.date.en) : ""}"/></div>
+    <div class="modal-field"><label>Title</label><input id="mf-title-en" value="${ev ? esc(ev.title.en) : ""}"/></div>
+    <div class="modal-field"><label>Description</label><textarea id="mf-desc-en">${ev ? ev.desc.en : ""}</textarea></div>
     <div class="modal-field"><label>Image (Base64 data or empty)</label><textarea id="mf-img" placeholder="Paste base64 image data or leave empty">${ev && ev.img ? ev.img.substring(0, 100) + "..." : ""}</textarea></div>`;
         document.getElementById("modal-overlay").classList.add("open");
       }
@@ -3562,10 +3505,7 @@
         document.getElementById("modal-title").textContent =
           idx >= 0 ? "Edit Language" : "Add Language";
         document.getElementById("modal-fields").innerHTML = `
-    <div class="modal-row">
-      <div class="modal-field"><label>Name (EN)</label><input id="mf-lang-en" value="${l ? esc(t(l.name)) : ""}"/></div>
-      <div class="modal-field"><label>Name (FR)</label><input id="mf-lang-fr" value="${l && l.name.fr ? esc(l.name.fr) : ""}"/></div>
-    </div>
+    <div class="modal-field"><label>Name</label><input id="mf-lang-en" value="${l ? esc(t(l.name)) : ""}"/></div>
     <div class="modal-field"><label>Level (e.g. C1 — Advanced)</label><input id="mf-lang-level" value="${l ? esc(l.level) : ""}"/></div>
     <div class="modal-field"><label>Proficiency % (0–100)</label><input type="number" id="mf-lang-pct" min="0" max="100" value="${l ? l.pct : 50}"/></div>`;
         document.getElementById("modal-overlay").classList.add("open");
@@ -3642,9 +3582,6 @@
           const obj = {
             category: {
               en: document.getElementById("mf-cat-en").value,
-              fr:
-                document.getElementById("mf-cat-fr").value ||
-                document.getElementById("mf-cat-en").value,
             },
             tags: document
               .getElementById("mf-tags")
@@ -3665,28 +3602,16 @@
             .value.split("\n")
             .map((s) => s.trim())
             .filter(Boolean);
-          const bulletsFr = document
-            .getElementById("mf-bullets-fr")
-            .value.split("\n")
-            .map((s) => s.trim())
-            .filter(Boolean);
           const obj = {
             date: {
               en: document.getElementById("mf-date-en").value,
-              fr:
-                document.getElementById("mf-date-fr").value ||
-                document.getElementById("mf-date-en").value,
             },
             title: {
               en: document.getElementById("mf-title-en").value,
-              fr:
-                document.getElementById("mf-title-fr").value ||
-                document.getElementById("mf-title-en").value,
             },
             org: document.getElementById("mf-org").value,
             bullets: {
               en: bulletsEn,
-              fr: bulletsFr.length ? bulletsFr : bulletsEn,
             },
           };
           if (index >= 0) data[index] = obj;
@@ -3698,15 +3623,9 @@
             year: document.getElementById("mf-year").value,
             name: {
               en: document.getElementById("mf-name-en").value,
-              fr:
-                document.getElementById("mf-name-fr").value ||
-                document.getElementById("mf-name-en").value,
             },
             desc: {
               en: document.getElementById("mf-desc-en").value,
-              fr:
-                document.getElementById("mf-desc-fr").value ||
-                document.getElementById("mf-desc-en").value,
             },
             stack: document
               .getElementById("mf-stack")
@@ -3724,21 +3643,12 @@
             icon: document.getElementById("mf-icon").value,
             date: {
               en: document.getElementById("mf-date-en").value,
-              fr:
-                document.getElementById("mf-date-fr").value ||
-                document.getElementById("mf-date-en").value,
             },
             title: {
               en: document.getElementById("mf-title-en").value,
-              fr:
-                document.getElementById("mf-title-fr").value ||
-                document.getElementById("mf-title-en").value,
             },
             desc: {
               en: document.getElementById("mf-desc-en").value,
-              fr:
-                document.getElementById("mf-desc-fr").value ||
-                document.getElementById("mf-desc-en").value,
             },
             img: document.getElementById("mf-img").value.trim() || null,
           };
@@ -3750,9 +3660,6 @@
           const obj = {
             name: {
               en: document.getElementById("mf-lang-en").value,
-              fr:
-                document.getElementById("mf-lang-fr").value ||
-                document.getElementById("mf-lang-en").value,
             },
             level: document.getElementById("mf-lang-level").value,
             pct: Math.min(
@@ -3803,9 +3710,6 @@
             return {
               category: {
                 en: document.getElementById("mf-cat-en").value,
-                fr:
-                  document.getElementById("mf-cat-fr").value ||
-                  document.getElementById("mf-cat-en").value,
               },
               tags: document
                 .getElementById("mf-tags")
@@ -3820,26 +3724,15 @@
               .value.split("\n")
               .map((s) => s.trim())
               .filter(Boolean);
-            const bFr = document
-              .getElementById("mf-bullets-fr")
-              .value.split("\n")
-              .map((s) => s.trim())
-              .filter(Boolean);
             return {
               date: {
                 en: document.getElementById("mf-date-en").value,
-                fr:
-                  document.getElementById("mf-date-fr").value ||
-                  document.getElementById("mf-date-en").value,
               },
               title: {
                 en: document.getElementById("mf-title-en").value,
-                fr:
-                  document.getElementById("mf-title-fr").value ||
-                  document.getElementById("mf-title-en").value,
               },
               org: document.getElementById("mf-org").value,
-              bullets: { en: bEn, fr: bFr.length ? bFr : bEn },
+              bullets: { en: bEn },
             };
           }
           case "projects":
@@ -3847,15 +3740,9 @@
               year: document.getElementById("mf-year").value,
               name: {
                 en: document.getElementById("mf-name-en").value,
-                fr:
-                  document.getElementById("mf-name-fr").value ||
-                  document.getElementById("mf-name-en").value,
               },
               desc: {
                 en: document.getElementById("mf-desc-en").value,
-                fr:
-                  document.getElementById("mf-desc-fr").value ||
-                  document.getElementById("mf-desc-en").value,
               },
               stack: document
                 .getElementById("mf-stack")
@@ -3869,21 +3756,12 @@
               icon: document.getElementById("mf-icon").value,
               date: {
                 en: document.getElementById("mf-date-en").value,
-                fr:
-                  document.getElementById("mf-date-fr").value ||
-                  document.getElementById("mf-date-en").value,
               },
               title: {
                 en: document.getElementById("mf-title-en").value,
-                fr:
-                  document.getElementById("mf-title-fr").value ||
-                  document.getElementById("mf-title-en").value,
               },
               desc: {
                 en: document.getElementById("mf-desc-en").value,
-                fr:
-                  document.getElementById("mf-desc-fr").value ||
-                  document.getElementById("mf-desc-en").value,
               },
               img: null,
             };
@@ -3891,9 +3769,6 @@
             return {
               name: {
                 en: document.getElementById("mf-lang-en").value,
-                fr:
-                  document.getElementById("mf-lang-fr").value ||
-                  document.getElementById("mf-lang-en").value,
               },
               level: document.getElementById("mf-lang-level").value,
               pct: Math.min(
@@ -4021,7 +3896,6 @@
             /:root\s*\{[^}]*\}/,
             `:root{${cssVarStr};--transition:0.35s cubic-bezier(.4,0,.2,1)}`,
           );
-          // Remove margin-right from main in exported HTML
           rootStyle.textContent += `\nmain { margin-right: 0 !important; }`;
           rootStyle.textContent += `\nfooter { margin-right: 0 !important; }`;
         }
@@ -4210,9 +4084,6 @@
         showToast("↺ Reset to defaults");
       }
 
-      /* ═══════════════════════════════════════════
-   EXPORT RESUME AS PDF
-═══════════════════════════════════════════ */
       /* ═══════════════════════════════════════════
    EXPORT RESUME AS PDF
 ═══════════════════════════════════════════ */
@@ -4672,103 +4543,6 @@
         w.document.title = "";
         showToast("📄 Resume ready — use browser Print \u2192 Save as PDF");
       }
-      const style = getComputedStyle(document.documentElement);
-      const accent = style.getPropertyValue("--accent").trim() || "#c9a96e";
-      const lang = "en";
-
-      const heroName =
-        document.querySelector(".hero-name")?.innerText?.replace("\n", " ") ||
-        "Your Name";
-      const heroTitle = document.querySelector(".hero-title")?.innerText || "";
-      const heroDesc = document.querySelector(".hero-desc")?.innerText || "";
-      const tl = (o) => (typeof o === "string" ? o : o[lang] || o.en || "");
-
-      // Accent as RGB for transparent fills
-      const hex = accent.replace("#", "");
-      const r = parseInt(hex.slice(0, 2), 16),
-        g = parseInt(hex.slice(2, 4), 16),
-        b = parseInt(hex.slice(4, 6), 16);
-      const accentLight = `rgba(${r},${g},${b},0.08)`;
-      const accentMid = `rgba(${r},${g},${b},0.18)`;
-
-      // Name split
-      const nameParts = heroName.trim().split(/\s+/);
-      const lastName = nameParts.pop();
-      const firstName = nameParts.join(" ");
-      const heroNameFormatted = firstName
-        ? `${firstName} <em>${lastName}</em>`
-        : lastName;
-
-      // Contact row
-      const contactRow = contactData
-        .map(
-          (c) => `
-    <span class="ci">
-      <span class="ci-icon">${c.icon}</span>
-      <a href="${c.href}">${c.value}</a>
-    </span>`,
-        )
-        .join("");
-
-      // Skills — pill style
-      const skillsHtml = skillsData
-        .map(
-          (s) => `
-    <div class="sk-group">
-      <div class="sk-cat">${tl(s.category)}</div>
-      <div class="sk-pills">${s.tags.map((tag) => `<span class="pill">${tag}</span>`).join("")}</div>
-    </div>`,
-        )
-        .join("");
-
-      // Languages — compact bars
-      const langHtml = languagesData
-        .map(
-          (l) => `
-    <div class="lang-row">
-      <div class="lang-meta">
-        <span class="lang-n">${tl(l.name)}</span>
-        <span class="lang-lv">${l.level}</span>
-      </div>
-      <div class="lang-bar-wrap"><div class="lang-bar-fill" style="width:${l.pct}%"></div></div>
-    </div>`,
-        )
-        .join("");
-
-      // Timeline
-      function tlHtml(data) {
-        return data
-          .map(
-            (item) => `
-      <div class="tl">
-        <div class="tl-head">
-          <div>
-            <div class="tl-title">${tl(item.title)}</div>
-            <div class="tl-org">${item.org}</div>
-          </div>
-          <span class="tl-date">${tl(item.date)}</span>
-        </div>
-        <ul class="tl-bullets">${(item.bullets[lang] || item.bullets.en || []).map((b) => `<li>${b}</li>`).join("")}</ul>
-      </div>`,
-          )
-          .join("");
-      }
-
-      // Projects — clean inline cards
-      const projHtml = projectsData
-        .slice(0, 6)
-        .map(
-          (p) => `
-    <div class="proj">
-      <div class="proj-top">
-      <span class="proj-name">${tl(p.name)}</span>
-      <span class="proj-year">${p.year}</span>
-      </div>
-      <div class="proj-stack">${p.stack.map((s) => `<span class="pill pill-sm">${s}</span>`).join("")}</div>
-      <div class="proj-desc">${tl(p.desc)}${p.link ? ` <a class="proj-link" href="${p.link}">↗</a>` : ""}</div>
-    </div>`,
-        )
-        .join("");
 
       /* ═══════════════════════════════════════════
    TOAST
