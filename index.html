@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Flash Portfolio</title>
-    <link rel="shortcut icon" href="icon.png" type="image/x-icon" />
+    <link
+      id="favicon"
+      rel="icon"
+      type="image/svg+xml"
+      sizes="32x32"
+      href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960'%3E%3Cpath d='m320-80 40-280H160l360-520h80l-40 320h240L400-80h-80Z' fill='%23c9a96e'/%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -3340,10 +3346,19 @@
         const isLightMode = document.body.classList.toggle("light-mode");
         localStorage.setItem("themeMode", isLightMode ? "light" : "dark");
         updateThemeToggleButton(isLightMode);
+        updateFaviconColor();
         // Reapply current theme with new mode colors
         if (currentTheme) {
           applyTheme(currentTheme);
         }
+      }
+      function updateFaviconColor() {
+        const accentColor = getComputedStyle(document.documentElement)
+          .getPropertyValue("--accent")
+          .trim();
+        const favicon = document.getElementById("favicon");
+        const encodedSvg = `%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960'%3E%3Cpath d='m320-80 40-280H160l360-520h80l-40 320h240L400-80h-80Z' fill='${encodeURIComponent(accentColor)}'/%3E%3C/svg%3E`;
+        favicon.href = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
       }
       function updateThemeToggleButton(isLightMode) {
         const btn = document.getElementById("theme-toggle");
@@ -3359,6 +3374,7 @@
         const isLight = savedMode === "light";
         document.body.classList.toggle("light-mode", isLight);
         updateThemeToggleButton(isLight);
+        updateFaviconColor();
       }
       function applyFont(t, val) {
         document.body.style.fontFamily = val;
@@ -3476,6 +3492,7 @@
 
         syncColorPickers(t);
         showToast("🎨 Theme applied: " + t.name);
+        updateFaviconColor();
       }
       function syncColorPickers(t) {
         const isLightMode = document.body.classList.contains("light-mode");
