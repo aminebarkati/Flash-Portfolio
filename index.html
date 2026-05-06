@@ -5148,7 +5148,7 @@
 
         // ── PROJECTS ──
         const projHTML = projectsData
-          .slice(0, 6)
+          .slice(0, 4)
           .map(function (p) {
             const pills = p.stack
               .map(function (s) {
@@ -5318,7 +5318,7 @@
                 inner =
                   '<div class="proj-grid">' +
                   entry.data
-                    .slice(0, 6)
+                    .slice(0, 4)
                     .map(function (p) {
                       var pills = p.stack
                         .map(function (s) {
@@ -5406,6 +5406,23 @@
           })
           .join("");
 
+        // Determine if education should be in sidebar or main column
+        const hasMultipleEducation = educationData.length > 2;
+        const sidebarEdu = !hasMultipleEducation
+          ? '<div class="rs"><div class="rs-title">' +
+            eduLabel +
+            "</div>" +
+            tlHtml(educationData) +
+            "</div>"
+          : "";
+        const mainColEdu = hasMultipleEducation
+          ? '<div class="rs"><div class="rs-title">' +
+            eduLabel +
+            "</div>" +
+            tlHtml(educationData) +
+            "</div>"
+          : "";
+
         var body =
           "" +
           '<div class="page">' +
@@ -5439,11 +5456,7 @@
           "</div>" +
           langHTML +
           "</div>" +
-          '<div class="rs"><div class="rs-title">' +
-          eduLabel +
-          "</div>" +
-          tlHtml(educationData) +
-          "</div>" +
+          sidebarEdu +
           "</div>" +
           '<div class="main-col">' +
           '<div class="rs"><div class="rs-title">' +
@@ -5451,6 +5464,7 @@
           "</div>" +
           tlHtml(experienceData) +
           "</div>" +
+          mainColEdu +
           '<div class="rs"><div class="rs-title">' +
           projLabel +
           '</div><div class="proj-grid">' +
