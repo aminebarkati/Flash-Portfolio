@@ -500,6 +500,10 @@
         color: #e74c3c;
         border-color: #e74c3c;
       }
+      .item-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
 
       .ep-btn {
         width: 100%;
@@ -3908,7 +3912,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${t(s.category)}</div><div class="item-row-sub">${s.tags.join(", ")}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openSkillModal(${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('skills',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('skills',${i},1)" ${i === skillsData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openSkillModal(${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteSkill(${i})">✕</button></div>`;
           sl.appendChild(row);
         });
@@ -3919,7 +3925,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${t(item.title)}</div><div class="item-row-sub">${item.org} · ${t(item.date)}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openTimelineModal('experience',${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('experience',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('experience',${i},1)" ${i === experienceData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openTimelineModal('experience',${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteTimeline('experience',${i})">✕</button></div>`;
           exl.appendChild(row);
         });
@@ -3930,7 +3938,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${t(item.title)}</div><div class="item-row-sub">${item.org} · ${t(item.date)}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openTimelineModal('education',${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('education',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('education',${i},1)" ${i === educationData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openTimelineModal('education',${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteTimeline('education',${i})">✕</button></div>`;
           edl.appendChild(row);
         });
@@ -3941,7 +3951,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${t(p.name)}</div><div class="item-row-sub">${p.year} · ${p.stack.join(", ")}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openProjectModal(${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('projects',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('projects',${i},1)" ${i === projectsData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openProjectModal(${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteProject(${i})">✕</button></div>`;
           pl.appendChild(row);
         });
@@ -3952,7 +3964,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${ev.icon} ${t(ev.title)}</div><div class="item-row-sub">${t(ev.date)}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openEventModal(${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('life',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('life',${i},1)" ${i === eventsData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openEventModal(${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteEvent(${i})">✕</button></div>`;
           evl.appendChild(row);
         });
@@ -3963,7 +3977,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${t(l.name)}</div><div class="item-row-sub">${l.level} · ${l.pct}%</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openLangModal(${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('languages',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('languages',${i},1)" ${i === languagesData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openLangModal(${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteLang(${i})">✕</button></div>`;
           ll.appendChild(row);
         });
@@ -3974,7 +3990,9 @@
           const row = document.createElement("div");
           row.className = "item-row";
           row.innerHTML = `<div><div class="item-row-label">${c.icon} ${c.label}</div><div class="item-row-sub">${c.value}</div></div>
-      <div class="item-row-btns"><button class="item-btn" onclick="openContactModal(${i})">Edit</button>
+      <div class="item-row-btns"><button class="item-btn" title="Move up" onclick="moveContentItem('contact',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+      <button class="item-btn" title="Move down" onclick="moveContentItem('contact',${i},1)" ${i === contactData.length - 1 ? "disabled" : ""}>↓</button>
+      <button class="item-btn" onclick="openContactModal(${i})">Edit</button>
       <button class="item-btn danger" onclick="deleteContact(${i})">✕</button></div>`;
           cl.appendChild(row);
         });
@@ -4077,11 +4095,78 @@
           }
           row.innerHTML = `<div><div class="item-row-label">${label}</div><div class="item-row-sub">${sub}</div></div>
             <div class="item-row-btns">
+              <button class="item-btn" title="Move up" onclick="moveCloneItem('${cloneId}',${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>
+              <button class="item-btn" title="Move down" onclick="moveCloneItem('${cloneId}',${i},1)" ${i === entry.data.length - 1 ? "disabled" : ""}>↓</button>
               <button class="item-btn" onclick="openCloneModal('${cloneId}',${i})">Edit</button>
               <button class="item-btn danger" onclick="deleteCloneItem('${cloneId}',${i})">✕</button>
             </div>`;
           listEl.appendChild(row);
         });
+      }
+
+      const itemCollections = {
+        skills: skillsData,
+        experience: experienceData,
+        education: educationData,
+        projects: projectsData,
+        life: eventsData,
+        languages: languagesData,
+        contact: contactData,
+      };
+
+      function moveArrayItem(arr, from, to) {
+        if (from === to) return;
+        const item = arr.splice(from, 1)[0];
+        arr.splice(to, 0, item);
+      }
+
+      function refreshCollection(kind) {
+        switch (kind) {
+          case "skills":
+            renderSkills();
+            break;
+          case "experience":
+            renderTimeline("experience", experienceData);
+            break;
+          case "education":
+            renderTimeline("education", educationData);
+            break;
+          case "projects":
+            renderProjects();
+            break;
+          case "life":
+            renderEvents();
+            break;
+          case "languages":
+            renderLanguages();
+            break;
+          case "contact":
+            renderContact();
+            break;
+        }
+      }
+
+      function moveContentItem(kind, index, delta) {
+        const arr = itemCollections[kind];
+        if (!arr) return;
+        const nextIndex = index + delta;
+        if (nextIndex < 0 || nextIndex >= arr.length) return;
+        moveArrayItem(arr, index, nextIndex);
+        refreshCollection(kind);
+        renderContentList();
+        showToast("↕ Item reordered");
+      }
+
+      function moveCloneItem(cloneId, index, delta) {
+        const entry = sectionRegistry[cloneId];
+        if (!entry) return;
+        const nextIndex = index + delta;
+        if (nextIndex < 0 || nextIndex >= entry.data.length) return;
+        moveArrayItem(entry.data, index, nextIndex);
+        renderSection(cloneId);
+        renderCloneList(cloneId);
+        renderContentList();
+        showToast("↕ Item reordered");
       }
 
       function deleteSkill(i) {
