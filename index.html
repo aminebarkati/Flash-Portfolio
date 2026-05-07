@@ -1945,6 +1945,49 @@
           Download your customized portfolio as a self-contained HTML file ready
           to deploy anywhere.
         </p>
+        <div class="ep-section-title">Portrait</div>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+          "
+        >
+          <button
+            class="ep-btn"
+            onclick="document.getElementById('export-portrait-file').click()"
+          >
+            🖼️ Upload portrait
+          </button>
+          <button
+            class="ep-btn"
+            id="export-portrait-clear"
+            style="display: none"
+            onclick="clearExportPortrait()"
+          >
+            Clear
+          </button>
+          <div
+            id="export-portrait-preview"
+            style="
+              width: 44px;
+              height: 44px;
+              border-radius: 50%;
+              overflow: hidden;
+              display: none;
+              border: 1px solid var(--border);
+            "
+          ></div>
+          <input
+            type="file"
+            id="export-portrait-file"
+            accept="image/*"
+            style="display: none"
+            onchange="handleExportPortraitFile(event)"
+          />
+          <input type="hidden" id="export-portrait-data" />
+        </div>
         <button class="ep-btn primary" onclick="exportHTML()">
           ⬇ Download HTML
         </button>
@@ -5119,6 +5162,46 @@
       /* ═══════════════════════════════════════════
    EXPORT RESUME AS PDF
 ═══════════════════════════════════════════ */
+
+      // Export portrait helpers (in-memory only, does not change snapshot schema)
+      function handleExportPortraitFile(e) {
+        var f = (e && e.target && e.target.files && e.target.files[0]) || null;
+        if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var data = ev.target.result;
+          var el = document.getElementById("export-portrait-data");
+          if (el) el.value = data;
+          var prev = document.getElementById("export-portrait-preview");
+          if (prev) {
+            prev.style.display = "block";
+            prev.innerHTML =
+              '<img src="' +
+              data +
+              '" style="width:100%;height:100%;object-fit:cover"/>';
+          }
+          var clr = document.getElementById("export-portrait-clear");
+          if (clr) clr.style.display = "inline-block";
+          showToast("🖼️ Portrait ready for export");
+        };
+        reader.readAsDataURL(f);
+      }
+
+      function clearExportPortrait() {
+        var el = document.getElementById("export-portrait-data");
+        if (el) el.value = "";
+        var file = document.getElementById("export-portrait-file");
+        if (file) file.value = "";
+        var prev = document.getElementById("export-portrait-preview");
+        if (prev) {
+          prev.style.display = "none";
+          prev.innerHTML = "";
+        }
+        var clr = document.getElementById("export-portrait-clear");
+        if (clr) clr.style.display = "none";
+        showToast("↺ Portrait cleared");
+      }
+
       function exportResumePDF() {
         const cs = getComputedStyle(document.documentElement);
         const accent = cs.getPropertyValue("--accent").trim() || "#c9a96e";
@@ -5241,7 +5324,9 @@
               })
               .join("");
             const link = p.link
-              ? ' <a class="proj-link" href="' + p.link + '">↗</a>'
+              ? ' <a class="proj-link" href="' +
+                p.link +
+                '" target="_blank" rel="noopener">↗</a>'
               : "";
             return (
               '<div class="proj">' +
@@ -5284,6 +5369,8 @@
           ".ci{display:flex;align-items:center;gap:5px;font-family:DM Mono,monospace;font-size:7pt;color:rgba(255,255,255,.82);margin-bottom:3px;justify-content:flex-end}",
           ".ci a{color:rgba(255,255,255,.82)}",
           ".ci-icon{font-size:8.5pt}",
+          ".hd-portrait img{width:36mm;height:36mm;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.12)}",
+          ".hd-center{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center}",
           // BODY columns
           ".body{display:flex;flex:1;align-items:stretch}",
           ".sidebar{width:63mm;flex-shrink:0;background:#f8f8f7;border-right:1px solid #e4e4e2;padding:7mm 6mm 8mm 8mm}",
@@ -5338,6 +5425,7 @@
           ".pill-sm{font-size:5.5pt;padding:1px 4px}",
           ".proj-desc{font-size:7pt;color:#555;line-height:1.5}",
           ".proj-link{font-size:7pt;color:" + accent + ";margin-left:3px}",
+          ".pdf-credit{position:fixed;right:10mm;bottom:8mm;font-size:7pt;color:#666;opacity:.88;background:transparent}",
         ].join("\n");
 
         // ── BUILD HTML via DOM string concat (NO backtick template) ──
@@ -5347,152 +5435,164 @@
         var lngLabel = "Languages";
         var eduLabel = "Education";
         var abtLabel = "About";
-
-        // Cloned sections for PDF
-        var clonedPdfSections = Object.keys(sectionRegistry)
-          .map(function (cid) {
-            var entry = sectionRegistry[cid];
-            var secEntry = sectionsOrder.find(function (s) {
-              return s.id === cid;
-            });
-            var cLabel = secEntry ? secEntry.labelEn || secEntry.label : cid;
-            var inner = "";
-            switch (entry.type) {
-              case "skills":
-                inner = entry.data
-                  .map(function (s) {
-                    var pills = s.tags
-                      .map(function (tag) {
-                        return '<span class="pill">' + tag + "</span>";
-                      })
-                      .join("");
-                    return (
-                      '<div class="sk-group"><div class="sk-cat">' +
-                      tl(s.category) +
-                      '</div><div class="sk-pills">' +
-                      pills +
-                      "</div></div>"
-                    );
-                  })
-                  .join("");
-                break;
-              case "experience":
-              case "education":
-                inner = entry.data
-                  .map(function (item) {
-                    var buls = (item.bullets[lang] || item.bullets.en || [])
-                      .map(function (b) {
-                        return "<li>" + b + "</li>";
-                      })
-                      .join("");
-                    return (
-                      '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
-                      tl(item.title) +
-                      '</div><div class="tl-org">' +
-                      item.org +
-                      '</div></div><span class="tl-date">' +
-                      tl(item.date) +
-                      '</span></div><ul class="tl-bullets">' +
-                      buls +
-                      "</ul></div>"
-                    );
-                  })
-                  .join("");
-                break;
-              case "projects":
-                inner =
-                  '<div class="proj-grid">' +
-                  entry.data
-                    .slice(0, 4)
-                    .map(function (p) {
-                      var pills = p.stack
-                        .map(function (s) {
-                          return '<span class="pill pill-sm">' + s + "</span>";
-                        })
-                        .join("");
-                      var lnk = p.link
-                        ? ' <a class="proj-link" href="' +
-                          p.link +
-                          '">' +
-                          String.fromCharCode(8599) +
-                          "</a>"
-                        : "";
-                      return (
-                        '<div class="proj"><div class="proj-top"><span class="proj-name">' +
-                        tl(p.name) +
-                        '</span><span class="proj-year">' +
-                        p.year +
-                        '</span></div><div class="proj-stack">' +
-                        pills +
-                        '</div><div class="proj-desc">' +
-                        tl(p.desc) +
-                        lnk +
-                        "</div></div>"
-                      );
-                    })
-                    .join("") +
-                  "</div>";
-                break;
-              case "languages":
-                inner = entry.data
-                  .map(function (l) {
-                    return (
-                      '<div class="lang-row"><div class="lang-meta"><span class="lang-n">' +
-                      tl(l.name) +
-                      '</span><span class="lang-lv">' +
-                      l.level +
-                      '</span></div><div class="lang-bar-wrap"><div class="lang-bar-fill" style="width:' +
-                      l.pct +
-                      '%"></div></div></div>'
-                    );
-                  })
-                  .join("");
-                break;
-              case "contact":
-                inner = entry.data
-                  .map(function (c) {
-                    return (
-                      '<span class="ci"><span class="ci-icon">' +
-                      c.icon +
-                      '</span><a href="' +
-                      c.href +
-                      '">' +
-                      c.value +
-                      "</a></span>"
-                    );
-                  })
-                  .join("");
-                break;
-              case "life":
-                inner = entry.data
-                  .map(function (ev) {
-                    return (
-                      '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
-                      ev.icon +
-                      " " +
-                      tl(ev.title) +
-                      '</div></div><span class="tl-date">' +
-                      tl(ev.date) +
-                      '</span></div><div class="about">' +
-                      tl(ev.desc) +
-                      "</div></div>"
-                    );
-                  })
-                  .join("");
-                break;
-            }
-            return inner
-              ? '<div class="rs"><div class="rs-title">' +
-                  cLabel +
-                  "</div>" +
-                  inner +
-                  "</div>"
-              : "";
-          })
-          .join("");
-
         // Determine if education should be in sidebar or main column
         const hasMultipleEducation = educationData.length > 2;
+
+        // Cloned sections for PDF (split into sidebar and main)
+        var clonedPdfSidebar = [];
+        var clonedPdfMain = [];
+        Object.keys(sectionRegistry).map(function (cid) {
+          var entry = sectionRegistry[cid];
+          var secEntry = sectionsOrder.find(function (s) {
+            return s.id === cid;
+          });
+          var cLabel = secEntry ? secEntry.labelEn || secEntry.label : cid;
+          var inner = "";
+          switch (entry.type) {
+            case "skills":
+              inner = entry.data
+                .map(function (s) {
+                  var pills = s.tags
+                    .map(function (tag) {
+                      return '<span class="pill">' + tag + "</span>";
+                    })
+                    .join("");
+                  return (
+                    '<div class="sk-group"><div class="sk-cat">' +
+                    tl(s.category) +
+                    '</div><div class="sk-pills">' +
+                    pills +
+                    "</div></div>"
+                  );
+                })
+                .join("");
+              break;
+            case "experience":
+            case "education":
+              inner = entry.data
+                .map(function (item) {
+                  var buls = (item.bullets[lang] || item.bullets.en || [])
+                    .map(function (b) {
+                      return "<li>" + b + "</li>";
+                    })
+                    .join("");
+                  return (
+                    '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
+                    tl(item.title) +
+                    '</div><div class="tl-org">' +
+                    item.org +
+                    '</div></div><span class="tl-date">' +
+                    tl(item.date) +
+                    '</span></div><ul class="tl-bullets">' +
+                    buls +
+                    "</ul></div>"
+                  );
+                })
+                .join("");
+              break;
+            case "projects":
+              inner =
+                '<div class="proj-grid">' +
+                entry.data
+                  .slice(0, 4)
+                  .map(function (p) {
+                    var pills = p.stack
+                      .map(function (s) {
+                        return '<span class="pill pill-sm">' + s + "</span>";
+                      })
+                      .join("");
+                    var lnk = p.link
+                      ? ' <a class="proj-link" href="' +
+                        p.link +
+                        '" target="_blank" rel="noopener">' +
+                        String.fromCharCode(8599) +
+                        "</a>"
+                      : "";
+                    return (
+                      '<div class="proj"><div class="proj-top"><span class="proj-name">' +
+                      tl(p.name) +
+                      '</span><span class="proj-year">' +
+                      p.year +
+                      '</span></div><div class="proj-stack">' +
+                      pills +
+                      '</div><div class="proj-desc">' +
+                      tl(p.desc) +
+                      lnk +
+                      "</div></div>"
+                    );
+                  })
+                  .join("") +
+                "</div>";
+              break;
+            case "languages":
+              inner = entry.data
+                .map(function (l) {
+                  return (
+                    '<div class="lang-row"><div class="lang-meta"><span class="lang-n">' +
+                    tl(l.name) +
+                    '</span><span class="lang-lv">' +
+                    l.level +
+                    '</span></div><div class="lang-bar-wrap"><div class="lang-bar-fill" style="width:' +
+                    l.pct +
+                    '%"></div></div></div>'
+                  );
+                })
+                .join("");
+              break;
+            case "contact":
+              inner = entry.data
+                .map(function (c) {
+                  return (
+                    '<span class="ci"><span class="ci-icon">' +
+                    c.icon +
+                    '</span><a href="' +
+                    c.href +
+                    '">' +
+                    c.value +
+                    "</a></span>"
+                  );
+                })
+                .join("");
+              break;
+            case "life":
+              inner = entry.data
+                .map(function (ev) {
+                  return (
+                    '<div class="tl"><div class="tl-head"><div class="tl-left"><div class="tl-title">' +
+                    ev.icon +
+                    " " +
+                    tl(ev.title) +
+                    '</div></div><span class="tl-date">' +
+                    tl(ev.date) +
+                    '</span></div><div class="about">' +
+                    tl(ev.desc) +
+                    "</div></div>"
+                  );
+                })
+                .join("");
+              break;
+          }
+          var block = inner
+            ? '<div class="rs"><div class="rs-title">' +
+              cLabel +
+              "</div>" +
+              inner +
+              "</div>"
+            : "";
+          if (!block) return "";
+          // Detection: treat sections labelled or typed as certifications as certs
+          var isCert =
+            cid === "certifications" ||
+            entry.type === "certifications" ||
+            (cLabel && cLabel.toLowerCase().indexOf("cert") !== -1);
+          if (hasMultipleEducation && isCert) clonedPdfSidebar.push(block);
+          else clonedPdfMain.push(block);
+          return "";
+        });
+        var clonedPdfSidebarHtml = clonedPdfSidebar.join("");
+        var clonedPdfMainHtml = clonedPdfMain.join("");
+
+        // Determine if education should be in sidebar or main column
         const sidebarEdu = !hasMultipleEducation
           ? '<div class="rs"><div class="rs-title">' +
             eduLabel +
@@ -5508,22 +5608,45 @@
             "</div>"
           : "";
 
+        var portraitData =
+          (document.getElementById("export-portrait-data") || {}).value || "";
+
+        var headerHtml = "";
+        if (portraitData) {
+          headerHtml =
+            '<div class="hd">' +
+            '<div class="hd-portrait"><img src="' +
+            portraitData +
+            '" alt="Portrait"/></div>' +
+            '<div class="hd-center"><div class="hd-name">' +
+            nameHTML +
+            "</div>" +
+            '<div class="hd-subtitle">' +
+            heroTitle +
+            "</div></div>" +
+            '<div class="hd-right">' +
+            contactHTML +
+            "</div></div>";
+        } else {
+          headerHtml =
+            '<div class="hd">' +
+            '<div class="hd-left">' +
+            '<div class="hd-name">' +
+            nameHTML +
+            "</div>" +
+            '<div class="hd-subtitle">' +
+            heroTitle +
+            "</div>" +
+            "</div>" +
+            '<div class="hd-right">' +
+            contactHTML +
+            "</div></div>";
+        }
+
         var body =
           "" +
           '<div class="page">' +
-          '<div class="hd">' +
-          '<div class="hd-left">' +
-          '<div class="hd-name">' +
-          nameHTML +
-          "</div>" +
-          '<div class="hd-subtitle">' +
-          heroTitle +
-          "</div>" +
-          "</div>" +
-          '<div class="hd-right">' +
-          contactHTML +
-          "</div>" +
-          "</div>" +
+          headerHtml +
           '<div class="body">' +
           '<div class="sidebar">' +
           '<div class="rs"><div class="rs-title">' +
@@ -5542,6 +5665,7 @@
           langHTML +
           "</div>" +
           sidebarEdu +
+          clonedPdfSidebarHtml +
           "</div>" +
           '<div class="main-col">' +
           '<div class="rs"><div class="rs-title">' +
@@ -5555,7 +5679,8 @@
           '</div><div class="proj-grid">' +
           projHTML +
           "</div></div>" +
-          clonedPdfSections +
+          clonedPdfMainHtml +
+          '<div class="pdf-credit">Made by Flash Portfolio</div>' +
           "</div>" +
           "</div>" +
           "</div>";
@@ -6099,5 +6224,23 @@
         }
       })();
     </script>
+    <div
+      id="fp-credit"
+      style="
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        font-size: 0.78rem;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 6px 8px;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        z-index: 9999;
+      "
+    >
+      Made by Flash Portfolio
+    </div>
   </body>
 </html>
